@@ -9,26 +9,29 @@ import java.util.ArrayList;
 //  with requiring line numbers.
 public class ErrorReporter {
 	private List<String> _errorQueue;
-	
+
 	public ErrorReporter() {
 		this._errorQueue = new ArrayList<String>();
 	}
-	
+
 	public boolean hasErrors() {
 		// TODO: Check if errorQueue is non-empty
-		return false;
+		return !(_errorQueue.isEmpty());
 	}
-	
+
 	public void outputErrors() {
 		// TODO: output all errors in the errorQueue
+		for (String e: _errorQueue) {
+			System.out.println(e);
+		}
 	}
-	
+
 	public void reportError(String ...error) {
 		StringBuilder sb = new StringBuilder();
-		
+
 		for(String s : error)
 			sb.append(s);
-		
+
 		_errorQueue.add(sb.toString());
 	}
 }
