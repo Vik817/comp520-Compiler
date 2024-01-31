@@ -182,7 +182,6 @@ public class Scanner {
 		}
 
 		_errors.reportError("Unrecognized Character: " + _currentChar + " in input.");
-		System.out.println(_currentChar);
 		return makeToken(TokenType.ERROR);
 	}
 
@@ -212,7 +211,6 @@ public class Scanner {
 		try {
 			int c = _in.read();
 			_currentChar = (char) c;
-			System.out.println(_currentChar + " character");
 			
 			// TODO: What happens if c == -1?
 			if(c == -1) {
