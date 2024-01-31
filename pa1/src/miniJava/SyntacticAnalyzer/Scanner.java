@@ -16,7 +16,7 @@ public class Scanner {
 		this._in = in;
 		this._errors = errors;
 		this._currentText = new StringBuilder();
-		
+
 		nextChar();
 	}
 	
@@ -34,6 +34,9 @@ public class Scanner {
 			nextChar();
 			if(_currentChar == '/') {
 				while(_currentChar != '\n' && !eot) {
+					skipIt();
+				}
+				if(_currentChar == '\n') {
 					skipIt();
 				}
 			}
@@ -61,7 +64,8 @@ public class Scanner {
 		// return, if, while, static, public, private, new, this, void
 		if((_currentChar >= 'A' && _currentChar <= 'Z') ||
 				(_currentChar >= 'a' && _currentChar <= 'z')) {
-			while(isAlphaNumeric()) {
+			takeIt();
+			while(isAlphaNumeric() || _currentChar == '_') {
 				takeIt();
 			}
 			switch(_currentText.toString()) {
@@ -178,6 +182,7 @@ public class Scanner {
 		}
 
 		_errors.reportError("Unrecognized Character: " + _currentChar + " in input.");
+		System.out.println(_currentChar);
 		return makeToken(TokenType.ERROR);
 	}
 
@@ -207,6 +212,7 @@ public class Scanner {
 		try {
 			int c = _in.read();
 			_currentChar = (char) c;
+			System.out.println(_currentChar + " character");
 			
 			// TODO: What happens if c == -1?
 			if(c == -1) {

@@ -10,7 +10,6 @@ public class Parser {
 	public Parser( Scanner scanner, ErrorReporter errors ) {
 		this._scanner = scanner;
 		this._errors = errors;
-		this._currentToken = this._scanner.scan();
 	}
 	
 	class SyntaxError extends Error {
@@ -43,7 +42,7 @@ public class Parser {
 		// TODO: Take in an identifier token
 		accept(TokenType.ID);
 		// TODO: Take in a {
-		accept(TokenType.LBRACK);
+		accept(TokenType.LCURL);
 		// TODO: Parse either a FieldDeclaration or MethodDeclaration
 		while(_currentToken.getTokenType() != TokenType.RCURL) {
 			parseFieldDeclaration();
@@ -327,6 +326,7 @@ public class Parser {
 	//  Can be useful if you want to error check and accept all-in-one.
 	private void accept(TokenType expectedType) throws SyntaxError {
 		if( _currentToken.getTokenType() == expectedType ) {
+			System.out.println(_currentToken.getTokenText());
 			_currentToken = _scanner.scan();
 			return;
 		}
