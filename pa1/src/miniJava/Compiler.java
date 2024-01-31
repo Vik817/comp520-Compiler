@@ -13,12 +13,12 @@ public class Compiler {
 		// TODO: Instantiate the ErrorReporter object
 		ErrorReporter reporter = new ErrorReporter();
 		// TODO: Check to make sure a file path is given in args
-		if(args.length != 0) {
+		if(args.length < 1) {
 			System.out.println("No file provided");
 			System.exit(1);
 		} else {
 			try {
-				FileInputStream iStream = new FileInputStream("/Users/vikram/Downloads/pa1-tests-partial/fail101.java");
+				FileInputStream iStream = new FileInputStream(args[0]);
 				Scanner scanning = new Scanner(iStream,reporter);
 				Parser parsing = new Parser(scanning, reporter);
 				parsing.parse();
