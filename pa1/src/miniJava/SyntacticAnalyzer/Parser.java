@@ -238,7 +238,7 @@ public class Parser {
 				accept(TokenType.ELSE);
 				parseStatement();
 			}
-		} else if(type == TokenType.WHILE) {
+		} else {
 			accept(TokenType.WHILE);
 			accept(TokenType.LPAREN);
 			parseExpression();
@@ -319,6 +319,8 @@ public class Parser {
 					parseExpression();
 				}
 			}
+		} else {
+			accept(TokenType.NUM);
 		}
 	}
 	
