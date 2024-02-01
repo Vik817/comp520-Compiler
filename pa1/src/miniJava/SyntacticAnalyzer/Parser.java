@@ -239,7 +239,7 @@ public class Parser {
                 accept(TokenType.ELSE);
                 parseStatement();
             }
-        } else {
+        } else { //while (Expression) Statement
             accept(TokenType.WHILE);
             accept(TokenType.LPAREN);
             parseExpression();
@@ -299,6 +299,7 @@ public class Parser {
         } else {
             accept(TokenType.NUM); //Error checking
         }
+        //Below is for when you have Expression binop Expression
         if (_currentToken.getTokenType() == TokenType.OPERATOR || _currentToken.getTokenType() == TokenType.NEGATIVE) {
             switch (_currentToken.getTokenType()) {
                 case OPERATOR:
@@ -321,8 +322,6 @@ public class Parser {
     //  Can be useful if you want to error check and accept all-in-one.
     private void accept(TokenType expectedType) throws SyntaxError {
         if (_currentToken.getTokenType() == expectedType) {
-            //System.out.println(_currentToken.getTokenType());
-            //System.out.println(_currentToken.getTokenText());
             _currentToken = _scanner.scan();
             return;
         }
