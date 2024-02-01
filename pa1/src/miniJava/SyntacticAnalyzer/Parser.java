@@ -127,18 +127,10 @@ public class Parser {
 	private void parseReference() throws SyntaxError {
 		if(_currentToken.getTokenType() == TokenType.ID) {
 			accept(TokenType.ID);
-			if(_currentToken.getTokenType() == TokenType.DOT) {
-				accept(TokenType.DOT);
-				parseReference();
-			}
 		} else if(_currentToken.getTokenType() == TokenType.THIS) {
 			accept(TokenType.THIS);
-			if(_currentToken.getTokenType() == TokenType.DOT) {
-				accept(TokenType.DOT);
-				parseReference();
-			}
-		} else {
-			parseReference();
+		}
+		while(_currentToken.getTokenType() == TokenType.DOT) {
 			accept(TokenType.DOT);
 			accept(TokenType.ID);
 		}
