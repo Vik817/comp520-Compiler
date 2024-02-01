@@ -305,9 +305,23 @@ public class Parser {
 		} else if(theType == TokenType.NEGATIVE) { //unop Expression
 			accept(TokenType.NEGATIVE);
 			parseExpression();
+			if(_currentToken.getTokenType() == TokenType.OPERATOR) {
+				accept(TokenType.OPERATOR);
+				parseExpression();
+			} else if(_currentToken.getTokenType() == TokenType.NEGATIVE) {
+				accept(TokenType.NEGATIVE);
+				parseExpression();
+			}
 		} else if(theType == TokenType.EXCLAMATION) { //unop Expression
 			accept(TokenType.EXCLAMATION);
 			parseExpression();
+			if(_currentToken.getTokenType() == TokenType.OPERATOR) {
+				accept(TokenType.OPERATOR);
+				parseExpression();
+			} else if(_currentToken.getTokenType() == TokenType.NEGATIVE) {
+				accept(TokenType.NEGATIVE);
+				parseExpression();
+			}
 		} else if(theType == TokenType.ID || theType == TokenType.THIS) { // Reference
 			parseReference();
 			if(_currentToken.getTokenType() == TokenType.LBRACK) { // Reference [Expression]
