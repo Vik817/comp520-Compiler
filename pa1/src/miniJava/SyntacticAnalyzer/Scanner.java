@@ -112,8 +112,8 @@ public class Scanner {
 			case '5': case '6': case '7': case '8': case '9':
 				while(isDigit()) {
 					takeIt();
-				return makeToken(TokenType.NUM);
 				}
+				return makeToken(TokenType.NUM);
 			case '(':
 				takeIt();
 				return makeToken(TokenType.LPAREN);
