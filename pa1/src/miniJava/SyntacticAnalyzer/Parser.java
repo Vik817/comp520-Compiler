@@ -258,11 +258,17 @@ public class Parser {
 			if(_currentToken.getTokenType() == TokenType.OPERATOR) {
 				accept(TokenType.OPERATOR);
 				parseExpression();
+			} else if(_currentToken.getTokenType() == TokenType.NEGATIVE) {
+				accept(TokenType.NEGATIVE);
+				parseExpression();
 			}
 		} else if(theType == TokenType.TRUEFALSE) {
 			accept(TokenType.TRUEFALSE);
 			if(_currentToken.getTokenType() == TokenType.OPERATOR) {
 				accept(TokenType.OPERATOR);
+				parseExpression();
+			} else if(_currentToken.getTokenType() == TokenType.NEGATIVE) {
+				accept(TokenType.NEGATIVE);
 				parseExpression();
 			}
 		} else if(theType == TokenType.NEW) {
@@ -276,12 +282,18 @@ public class Parser {
 					if(_currentToken.getTokenType() == TokenType.OPERATOR) {
 						accept(TokenType.OPERATOR);
 						parseExpression();
+					} else if(_currentToken.getTokenType() == TokenType.NEGATIVE) {
+						accept(TokenType.NEGATIVE);
+						parseExpression();
 					}
 				} else { // new id()
 					accept(TokenType.LPAREN);
 					accept(TokenType.RPAREN);
 					if(_currentToken.getTokenType() == TokenType.OPERATOR) {
 						accept(TokenType.OPERATOR);
+						parseExpression();
+					} else if(_currentToken.getTokenType() == TokenType.NEGATIVE) {
+						accept(TokenType.NEGATIVE);
 						parseExpression();
 					}
 				}
@@ -293,10 +305,16 @@ public class Parser {
 				if(_currentToken.getTokenType() == TokenType.OPERATOR) {
 					accept(TokenType.OPERATOR);
 					parseExpression();
+				} else if(_currentToken.getTokenType() == TokenType.NEGATIVE) {
+					accept(TokenType.NEGATIVE);
+					parseExpression();
 				}
 			}
-		} else if(theType == TokenType.OPERATOR) { //unop Expression
-			accept(TokenType.OPERATOR);
+		} else if(theType == TokenType.NEGATIVE) { //unop Expression
+			accept(TokenType.NEGATIVE);
+			parseExpression();
+		} else if(theType == TokenType.EXCLAMATION) { //unop Expression
+			accept(TokenType.EXCLAMATION);
 			parseExpression();
 		} else if(theType == TokenType.ID || theType == TokenType.THIS) { // Reference
 			parseReference();
@@ -307,8 +325,11 @@ public class Parser {
 				if(_currentToken.getTokenType() == TokenType.OPERATOR) {
 					accept(TokenType.OPERATOR);
 					parseExpression();
+				} else if(_currentToken.getTokenType() == TokenType.NEGATIVE) {
+					accept(TokenType.NEGATIVE);
+					parseExpression();
 				}
-			} else { // Reference (ArgumentList?)
+			} else if(_currentToken.getTokenType() == TokenType.LPAREN){ // Reference (ArgumentList?)
 				accept(TokenType.LPAREN);
 				while(_currentToken.getTokenType() != TokenType.RPAREN) {
 					parseArgumentList();
@@ -316,6 +337,9 @@ public class Parser {
 				accept(TokenType.RPAREN);
 				if(_currentToken.getTokenType() == TokenType.OPERATOR) {
 					accept(TokenType.OPERATOR);
+					parseExpression();
+				} else if(_currentToken.getTokenType() == TokenType.NEGATIVE) {
+					accept(TokenType.NEGATIVE);
 					parseExpression();
 				}
 			}
@@ -328,6 +352,7 @@ public class Parser {
 	//  Can be useful if you want to error check and accept all-in-one.
 	private void accept(TokenType expectedType) throws SyntaxError {
 		if( _currentToken.getTokenType() == expectedType ) {
+			//System.out.println(_currentToken.getTokenType());
 			_currentToken = _scanner.scan();
 			return;
 		}

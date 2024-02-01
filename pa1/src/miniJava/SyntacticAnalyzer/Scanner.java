@@ -11,6 +11,7 @@ public class Scanner {
 	private char _currentChar;
 	
 	private boolean eot = false;
+	private boolean commentDone = false;
 	
 	public Scanner( InputStream in, ErrorReporter errors ) {
 		this._in = in;
@@ -31,8 +32,9 @@ public class Scanner {
 		}
 		// TODO: Consider what happens if there is a comment (// or /* */)
 		if(_currentChar == '/') {
-			nextChar();
+			takeIt();
 			if(_currentChar == '/') {
+				_currentText = new StringBuilder();
 				while(_currentChar != '\n' && !eot) {
 					skipIt();
 				}
@@ -41,16 +43,25 @@ public class Scanner {
 				}
 			}
 			else if(_currentChar == '*') {
-				while(!eot) {
+				_currentText = new StringBuilder();
+				skipIt();
+				while(!commentDone) {
 					if(_currentChar == '*') {
 						skipIt();
 						if(_currentChar == '/') {
-							break;
+							commentDone = true;
 						}
 					}
 					skipIt();
 				}
+			} else {
+				return makeToken(TokenType.OPERATOR);
 			}
+		}
+		//Need to check for whitespace again
+		while((_currentChar == ' ' || _currentChar == '\n' ||
+				_currentChar == '\t' || _currentChar == '\r') && !eot) {
+			skipIt();
 		}
 		// TODO: What happens if there are no more tokens?
 		if(eot) {
@@ -136,9 +147,12 @@ public class Scanner {
 			case '.':
 				takeIt();
 				return makeToken(TokenType.DOT);
-			case '+': case '-': case '*': case '/':
+			case '+': case '*': case '/':
 				takeIt();
 				return makeToken(TokenType.OPERATOR);
+			case '-':
+				takeIt();
+				return makeToken(TokenType.NEGATIVE);
 
 		}
 		if(_currentChar == '>') {
@@ -168,7 +182,7 @@ public class Scanner {
 				takeIt();
 				return makeToken(TokenType.OPERATOR);
 			}
-			return makeToken(TokenType.OPERATOR);
+			return makeToken(TokenType.EXCLAMATION);
 		} else if(_currentChar == '&') {
 			takeIt();
 			if(_currentChar == '&') {
