@@ -344,7 +344,7 @@ public class Parser {
 	//  Can be useful if you want to error check and accept all-in-one.
 	private void accept(TokenType expectedType) throws SyntaxError {
 		if( _currentToken.getTokenType() == expectedType ) {
-			//ystem.out.println(_currentToken.getTokenType());
+			System.out.println(_currentToken.getTokenType());
 			_currentToken = _scanner.scan();
 			return;
 		}

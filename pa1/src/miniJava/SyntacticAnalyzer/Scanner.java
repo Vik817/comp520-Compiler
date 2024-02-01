@@ -180,11 +180,13 @@ public class Scanner {
 		} else if(_currentChar == '&') {
 			takeIt();
 			if(_currentChar == '&') {
+				takeIt();
 				return makeToken(TokenType.OPERATOR);
 			}
 		} else if(_currentChar == '|') {
 			takeIt();
 			if(_currentChar == '|') {
+				takeIt();
 				return makeToken(TokenType.OPERATOR);
 			}
 		}
