@@ -1,12 +1,20 @@
 package miniJava.SyntacticAnalyzer;
 
 import miniJava.ErrorReporter;
+import miniJava.AbstractSyntaxTrees.Package;
+import miniJava.AbstractSyntaxTrees.*;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Member;
+import java.lang.reflect.Method;
 
 public class Parser {
     private final Scanner _scanner;
     private final ErrorReporter _errors;
     private Token _currentToken;
 
+    public FieldDeclList fieldList = new FieldDeclList();
+    public MethodDeclList methodList = new MethodDeclList();
     public Parser(Scanner scanner, ErrorReporter errors) {
         this._scanner = scanner;
         this._errors = errors;
@@ -22,21 +30,24 @@ public class Parser {
     }
 
     // Program ::= (ClassDeclaration)* eot
-    private void parseProgram() throws SyntaxError {
+    private Package parseProgram() throws SyntaxError {
         // TODO: Keep parsing class declarations until eot
+        ClassDeclList classList = new ClassDeclList();
         while (_currentToken.getTokenType() != TokenType.EOT) {
-            parseClassDeclaration();
+            classList.add(parseClassDeclaration());
         }
         accept(TokenType.EOT);
+        return new Package(classList, null);
     }
 
     // ClassDeclaration ::= class identifier { (FieldDeclaration|MethodDeclaration)* }
-    private void parseClassDeclaration() throws SyntaxError {
+    private ClassDecl parseClassDeclaration() throws SyntaxError {
         // TODO: Take in a "class" token (check by the TokenType)
         accept(TokenType.CLASS);
         //  What should be done if the first token isn't "class"?
 
         // TODO: Take in an identifier token
+        String className = _currentToken.getTokenText();
         accept(TokenType.ID);
         // TODO: Take in a {
         accept(TokenType.LCURL);
@@ -46,78 +57,145 @@ public class Parser {
         }
         // TODO: Take in a }
         accept(TokenType.RCURL);
+        return new ClassDecl(className, fieldList, methodList, null);
     }
 
-    private void parseFieldDeclaration() throws SyntaxError {
-        parseVisibility();
-        parseAccess();
+    private MemberDecl parseFieldDeclaration() throws SyntaxError {
+        FieldDecl fieldD;
+        boolean isPriv = parseVisibility();
+        boolean isStatic = parseAccess();
         if (_currentToken.getTokenType() == TokenType.VOID) {
             accept(TokenType.VOID);
+            String name = _currentToken.getTokenText();
             accept(TokenType.ID);
-            parseMethodDeclaration();
+            //Create a fieldDecl and use it as a parameter in making a MethodDecl
+            fieldD = new FieldDecl(isPriv, isStatic, new BaseType(TypeKind.VOID, null), name, null);
+            methodList.add(parseMethodDeclaration(fieldD));
+            return null;
         } else {
-            parseType();
+            TypeDenoter t = parseType();
+            String name = _currentToken.getTokenText();
             accept(TokenType.ID);
+            fieldD = new FieldDecl(isPriv, isStatic, t, name, null);
             if (_currentToken.getTokenType() == TokenType.LPAREN) {
-                parseMethodDeclaration();
+                methodList.add(parseMethodDeclaration(fieldD));
+                return null;
             } else {
                 accept(TokenType.SEMICOLON);
             }
+            //Add to FieldDeclList
+            fieldList.add(fieldD);
+            return fieldD;
         }
     }
 
-    private void parseMethodDeclaration() throws SyntaxError {
+    private MethodDecl parseMethodDeclaration(MemberDecl mem) throws SyntaxError {
         accept(TokenType.LPAREN);
+        ParameterDeclList parList = new ParameterDeclList();
+        StatementList stateList = new StatementList();
         if (_currentToken.getTokenType() != TokenType.RPAREN) {
-            parseParameterList();
+            parList = parseParameterList();
         }
         accept(TokenType.RPAREN);
         accept(TokenType.LCURL);
         while (_currentToken.getTokenType() != TokenType.RCURL) {
-            parseStatement();
+            stateList.add(parseStatement());
         }
         accept(TokenType.RCURL);
+        return new MethodDecl(mem, parList, stateList, null);
     }
 
-    private void parseVisibility() throws SyntaxError {
+    private boolean parseVisibility() throws SyntaxError {
         if (_currentToken.getTokenType() == TokenType.VISIBILITY) {
+            if(_currentToken.getTokenText().equals("private")) {
+                accept(TokenType.VISIBILITY);
+                return false;
+            }
             accept(TokenType.VISIBILITY);
         }
+        return true;
     }
 
-    private void parseAccess() throws SyntaxError {
+    private boolean parseAccess() throws SyntaxError {
         if (_currentToken.getTokenType() == TokenType.STATIC) {
             accept(TokenType.STATIC);
+            return true;
         }
+        return false;
     }
 
-    private void parseType() throws SyntaxError {
+    // NEED TO FIX PARSETYPE
+    private TypeDenoter parseType() throws SyntaxError {
         TokenType type = _currentToken.getTokenType();
+        TypeDenoter tD;
         if (type == TokenType.BOOLEAN) {
             accept(TokenType.BOOLEAN);
+            tD = new TypeDenoter(TypeKind.BOOLEAN, null) {
+                @Override
+                public <A, R> R visit(Visitor<A, R> v, A o) {
+                    return null;
+                }
+            };
+            return tD;
+
         } else if (type == TokenType.INT) {
             accept(TokenType.INT);
             if (_currentToken.getTokenType() == TokenType.LBRACK) {
                 accept(TokenType.LBRACK);
                 accept(TokenType.RBRACK);
+                tD = new TypeDenoter(TypeKind.ARRAY, null) {
+                    @Override
+                    public <A, R> R visit(Visitor<A, R> v, A o) {
+                        return null;
+                    }
+                };
+                return tD;
             }
+            tD = new TypeDenoter(TypeKind.INT, null) {
+                @Override
+                public <A, R> R visit(Visitor<A, R> v, A o) {
+                    return null;
+                }
+            };
+            return tD;
         } else if (type == TokenType.ID) {
             accept(TokenType.ID);
             if (_currentToken.getTokenType() == TokenType.LBRACK) {
                 accept(TokenType.LBRACK);
                 accept(TokenType.RBRACK);
+                tD = new TypeDenoter(TypeKind.ARRAY, null) {
+                    @Override
+                    public <A, R> R visit(Visitor<A, R> v, A o) {
+                        return null;
+                    }
+                };
+                return tD;
             }
+            tD = new TypeDenoter(TypeKind.CLASS, null) {
+                @Override
+                public <A, R> R visit(Visitor<A, R> v, A o) {
+                    return null;
+                }
+            };
+            return tD;
         }
+        return null;
     }
 
-    private void parseParameterList() throws SyntaxError {
-        parseType();
+    private ParameterDeclList parseParameterList() throws SyntaxError {
+        ParameterDeclList pList = new ParameterDeclList();
+        TypeDenoter t = parseType();
+        String name = _currentToken.getTokenText();
         accept(TokenType.ID);
+        pList.add(new ParameterDecl(t, name, null));
         while (_currentToken.getTokenType() == TokenType.COMMA) {
             accept(TokenType.COMMA);
-            parseType();
+            t = parseType();
+            name = _currentToken.getTokenText();
             accept(TokenType.ID);
+            pList.add(new ParameterDecl(t, name, null));
         }
+        return pList;
     }
 
     private void parseArgumentList() throws SyntaxError {
@@ -141,7 +219,7 @@ public class Parser {
 
     }
 
-    private void parseStatement() throws SyntaxError {
+    private Statement parseStatement() throws SyntaxError {
         TokenType type = _currentToken.getTokenType();
         if (type == TokenType.LCURL) { // Statement  ::= { Statement* }
             accept(TokenType.LCURL);

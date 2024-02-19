@@ -4,6 +4,8 @@ public class Token {
     private final TokenType _type;
     private final String _text;
 
+    //private final SourcePosition _position;
+
     public Token(TokenType type, String text) {
         // TODO: Store the token's type and text
         this._type = type;
@@ -18,5 +20,9 @@ public class Token {
     public String getTokenText() {
         // TODO: Return the token text
         return this._text;
+    }
+
+    public SourcePosition getTokenPosition() {
+        return null;
     }
 }
