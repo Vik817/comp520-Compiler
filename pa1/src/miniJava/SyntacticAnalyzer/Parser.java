@@ -283,14 +283,13 @@ public class Parser {
             } else if (_currentToken.getTokenType() == TokenType.LBRACK) { // Checking if Type or Ref
                 accept(TokenType.LBRACK);
                 if (_currentToken.getTokenType() == TokenType.RBRACK) { //Know this is a Type, VarDeclStmt
-                    String name = _currentToken.getTokenText();
-                    Identifier i = new Identifier(_currentToken);
                     accept(TokenType.RBRACK);
+                    String name = _currentToken.getTokenText();
                     accept(TokenType.ID);
                     accept(TokenType.ONEEQUAL);
                     Expression e = parseExpression();
                     accept(TokenType.SEMICOLON);
-                    VarDecl vD = new VarDecl(new ClassType(i, null), name, null);
+                    VarDecl vD = new VarDecl(new ArrayType(new ClassType(theID, null), null), name, null);
                     return new VarDeclStmt(vD, e, null);
                 } else { // Reference [ Expression ] = Expression; IxAssignStmt
                     Expression first = parseExpression();
