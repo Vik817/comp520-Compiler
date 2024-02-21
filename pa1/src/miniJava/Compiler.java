@@ -27,8 +27,8 @@ public class Compiler {
                     System.out.println("Error");
                     reporter.outputErrors();
                 } else {
-                    ASTDisplay display = new ASTDisplay();
-                    display.showTree(p);
+                    //ASTDisplay display = new ASTDisplay();
+                    //display.showTree(p);
                     System.out.println("Success");
                 }
             } catch (FileNotFoundException e) {
