@@ -268,16 +268,17 @@ public class Parser {
         } else if (type == TokenType.ID) { // Differentiating between Type and Reference
             //If it is a reference, we will have aR be the reference itself so it can be used later
             Reference aR = new IdRef(new Identifier(_currentToken), null);
+            //If it is a type, we will have theID be the className itself to be used later
+            Identifier theID = new Identifier(_currentToken);
             accept(TokenType.ID);
 
             if (_currentToken.getTokenType() == TokenType.ID) { //Know it is Type, VarDeclStmt
                 String name = _currentToken.getTokenText();
-                Identifier i = new Identifier(_currentToken);
                 accept(TokenType.ID);
                 accept(TokenType.ONEEQUAL);
                 Expression e = parseExpression();
                 accept(TokenType.SEMICOLON);
-                VarDecl vD = new VarDecl(new ClassType(i, null), name, null);
+                VarDecl vD = new VarDecl(new ClassType(theID, null), name, null);
                 return new VarDeclStmt(vD, e, null);
             } else if (_currentToken.getTokenType() == TokenType.LBRACK) { // Checking if Type or Ref
                 accept(TokenType.LBRACK);
