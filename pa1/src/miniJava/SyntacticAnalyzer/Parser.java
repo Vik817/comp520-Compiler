@@ -211,11 +211,7 @@ public class Parser {
             a = new Identifier(_currentToken);
             accept(TokenType.ID);
         }
-        if(r != null && a != null) {
-            return new QualRef(r, a, null);
-        } else {
-            return null;
-        }
+        return new QualRef(r, a, null);
         
 
     }
@@ -425,7 +421,7 @@ public class Parser {
                 accept(TokenType.RBRACK);
                 currentExpression = new IxExpr(ref, e, null);
             } else if (_currentToken.getTokenType() == TokenType.LPAREN) { // Reference (ArgumentList?)
-                ExprList list = null;
+                ExprList list = new ExprList();
                 accept(TokenType.LPAREN);
                 //Changed while to if
                 if (_currentToken.getTokenType() != TokenType.RPAREN) {
