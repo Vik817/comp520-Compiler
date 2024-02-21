@@ -58,7 +58,10 @@ public class Parser {
         }
         // TODO: Take in a }
         accept(TokenType.RCURL);
-        return new ClassDecl(className, fieldList, methodList, null);
+        ClassDecl classdecl = new ClassDecl(className, fieldList, methodList, null);
+        fieldList = new FieldDeclList();
+        methodList = new MethodDeclList();
+        return classdecl;
     }
 
     private MemberDecl parseFieldDeclaration() throws SyntaxError {
