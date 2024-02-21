@@ -29,7 +29,6 @@ public class Compiler {
                 } else {
                     ASTDisplay display = new ASTDisplay();
                     display.showTree(p);
-                    System.out.println("Success");
                 }
             } catch (FileNotFoundException e) {
                 System.out.println("File not found");
