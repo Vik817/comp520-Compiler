@@ -110,11 +110,11 @@ public class Parser {
         if (_currentToken.getTokenType() == TokenType.VISIBILITY) {
             if(_currentToken.getTokenText().equals("private")) {
                 accept(TokenType.VISIBILITY);
-                return false;
+                return true;
             }
             accept(TokenType.VISIBILITY);
         }
-        return true;
+        return false;
     }
 
     private boolean parseAccess() throws SyntaxError {
@@ -430,6 +430,8 @@ public class Parser {
                 }
                 accept(TokenType.RPAREN);
                 currentExpression = new CallExpr(ref, list, null);
+            } else { //Just Reference
+                currentExpression = new RefExpr(ref, null);
             }
         } else {
             accept(TokenType.NUM); //Error checking
@@ -454,6 +456,7 @@ public class Parser {
             }
         }
         return currentExpression;
+
 
 
     }
