@@ -180,11 +180,11 @@ public class Parser {
 
     private ExprList parseArgumentList() throws SyntaxError {
         ExprList argList = new ExprList();
-        Expression e = parseExpression();
+        Expression e = parseOr();
         argList.add(e);
         while (_currentToken.getTokenType() == TokenType.COMMA) {
             accept(TokenType.COMMA);
-            e = parseExpression();
+            e = parseOr();
             argList.add(e);
         }
         return argList;
@@ -232,7 +232,7 @@ public class Parser {
             String name = _currentToken.getTokenText();
             accept(TokenType.ID);
             accept(TokenType.ONEEQUAL);
-            Expression e = parseExpression();
+            Expression e = parseOr();
             accept(TokenType.SEMICOLON);
             VarDecl vD = new VarDecl(t, name, null);
             return new VarDeclStmt(vD, e, null);
@@ -240,15 +240,15 @@ public class Parser {
             Reference r = parseReference();
             if (_currentToken.getTokenType() == TokenType.ONEEQUAL) { // ::= Reference = Expression;
                 accept(TokenType.ONEEQUAL);
-                Expression e = parseExpression();
+                Expression e = parseOr();
                 accept(TokenType.SEMICOLON);
                 return new AssignStmt(r, e, null);
             } else if (_currentToken.getTokenType() == TokenType.LBRACK) { // ::= Reference [Expression] = Expression;
                 accept(TokenType.LBRACK);
-                Expression first = parseExpression();
+                Expression first = parseOr();
                 accept(TokenType.RBRACK);
                 accept(TokenType.ONEEQUAL);
-                Expression second = parseExpression();
+                Expression second = parseOr();
                 accept(TokenType.SEMICOLON);
                 return new IxAssignStmt(r, first, second, null);
             } else if (_currentToken.getTokenType() == TokenType.LPAREN) { // ::= Reference (ArgumentList?);
@@ -273,7 +273,7 @@ public class Parser {
                 String name = _currentToken.getTokenText();
                 accept(TokenType.ID);
                 accept(TokenType.ONEEQUAL);
-                Expression e = parseExpression();
+                Expression e = parseOr();
                 accept(TokenType.SEMICOLON);
                 VarDecl vD = new VarDecl(new ClassType(theID, null), name, null);
                 return new VarDeclStmt(vD, e, null);
@@ -284,15 +284,15 @@ public class Parser {
                     String name = _currentToken.getTokenText();
                     accept(TokenType.ID);
                     accept(TokenType.ONEEQUAL);
-                    Expression e = parseExpression();
+                    Expression e = parseOr();
                     accept(TokenType.SEMICOLON);
                     VarDecl vD = new VarDecl(new ArrayType(new ClassType(theID, null), null), name, null);
                     return new VarDeclStmt(vD, e, null);
                 } else { // Reference [ Expression ] = Expression; IxAssignStmt
-                    Expression first = parseExpression();
+                    Expression first = parseOr();
                     accept(TokenType.RBRACK);
                     accept(TokenType.ONEEQUAL);
-                    Expression second = parseExpression();
+                    Expression second = parseOr();
                     accept(TokenType.SEMICOLON);
                     return new IxAssignStmt(aR, first, second, null);
                 }
@@ -308,15 +308,15 @@ public class Parser {
                 }
                 if (_currentToken.getTokenType() == TokenType.ONEEQUAL) { // Reference = Expression;
                     accept(TokenType.ONEEQUAL);
-                    Expression e = parseExpression();
+                    Expression e = parseOr();
                     accept(TokenType.SEMICOLON);
                     return new AssignStmt(aR, e, null);
                 } else if (_currentToken.getTokenType() == TokenType.LBRACK) { // Reference [Expression] = Expression;
                     accept(TokenType.LBRACK);
-                    Expression i = parseExpression();
+                    Expression i = parseOr();
                     accept(TokenType.RBRACK);
                     accept(TokenType.ONEEQUAL);
-                    Expression e = parseExpression();
+                    Expression e = parseOr();
                     accept(TokenType.SEMICOLON);
                     return new IxAssignStmt(aR, i, e, null);
                 } else if (_currentToken.getTokenType() == TokenType.LPAREN) { // Reference (ArgumentList?);
@@ -336,14 +336,14 @@ public class Parser {
             accept(TokenType.RETURN);
             Expression e = null;
             while (_currentToken.getTokenType() != TokenType.SEMICOLON) {
-                e = parseExpression();
+                e = parseOr();
             }
             accept(TokenType.SEMICOLON);
             return new ReturnStmt(e, null);
         } else if (type == TokenType.IF) { // if (Expression) Statement (else Statement)?
             accept(TokenType.IF);
             accept(TokenType.LPAREN);
-            Expression b = parseExpression();
+            Expression b = parseOr();
             accept(TokenType.RPAREN);
             Statement t = parseStatement();
             if (_currentToken.getTokenType() == TokenType.ELSE) {
@@ -355,7 +355,7 @@ public class Parser {
         } else { //while (Expression) Statement
             accept(TokenType.WHILE);
             accept(TokenType.LPAREN);
-            Expression e = parseExpression();
+            Expression e = parseOr();
             accept(TokenType.RPAREN);
             Statement t = parseStatement();
             return new WhileStmt(e, t, null);
@@ -368,7 +368,7 @@ public class Parser {
         TokenType theType = _currentToken.getTokenType();
         if (theType == TokenType.LPAREN) { // ( Expression )
             accept(TokenType.LPAREN);
-            Expression e = parseExpression();
+            Expression e = parseOr();
             accept(TokenType.RPAREN);
             return e;
         } else if (theType == TokenType.NUM) {
@@ -387,7 +387,7 @@ public class Parser {
                 accept(TokenType.ID);
                 if (_currentToken.getTokenType() == TokenType.LBRACK) { // new id[Expression]
                     accept(TokenType.LBRACK);
-                    Expression e = parseExpression();
+                    Expression e = parseOr();
                     accept(TokenType.RBRACK);
                     return  new NewArrayExpr(ct, e, null);
                 } else { // new id()
@@ -399,7 +399,7 @@ public class Parser {
                 BaseType type = new BaseType(TypeKind.INT, null);
                 accept(TokenType.INT);
                 accept(TokenType.LBRACK);
-                Expression e = parseExpression();
+                Expression e = parseOr();
                 accept(TokenType.RBRACK);
                 return new NewArrayExpr(type, e, null);
             }
@@ -407,7 +407,7 @@ public class Parser {
             Reference ref = parseReference();
             if (_currentToken.getTokenType() == TokenType.LBRACK) { // Reference [Expression]
                 accept(TokenType.LBRACK);
-                Expression e = parseExpression();
+                Expression e = parseOr();
                 accept(TokenType.RBRACK);
                 return new IxExpr(ref, e, null);
             } else if (_currentToken.getTokenType() == TokenType.LPAREN) { // Reference (ArgumentList?)
@@ -422,32 +422,10 @@ public class Parser {
             } else { //Just Reference
                 return new RefExpr(ref, null);
             }
-        } else if (_currentToken.getTokenType() == TokenType.OPERATOR || _currentToken.getTokenType() == TokenType.NEGATIVE) {
-            return parseOr();
-
-
-//            switch (_currentToken.getTokenType()) {
-//                case OPERATOR:
-//                    while (_currentToken.getTokenType() == TokenType.OPERATOR) {
-//                        Operator oper = new Operator(_currentToken);
-//                        accept(TokenType.OPERATOR);
-//                        Expression secondEx = parseExpression();
-//                        return new BinaryExpr(oper, currentExpression, secondEx, null);
-//                    }
-//                case NEGATIVE:
-//                    while (_currentToken.getTokenType() == TokenType.NEGATIVE) {
-//                        Operator oper = new Operator(_currentToken);
-//                        accept(TokenType.NEGATIVE);
-//                        Expression secondEx = parseExpression();
-//                        return new BinaryExpr(oper, currentExpression, secondEx, null);
-//                    }
-//            }
         } else {
-            accept(TokenType.NUM); //Error checking
+            accept(TokenType.NUM);
         }
-
-
-        return null;
+        throw new SyntaxError();
     }
 
     private Expression parseOr() {
