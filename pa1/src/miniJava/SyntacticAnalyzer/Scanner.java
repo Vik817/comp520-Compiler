@@ -54,6 +54,7 @@ public class Scanner {
                     }
                 }
             } else {
+                _currentText = new StringBuilder("/");
                 return makeToken(TokenType.OPERATOR);
             }
         }

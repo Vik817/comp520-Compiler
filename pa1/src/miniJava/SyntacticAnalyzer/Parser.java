@@ -502,7 +502,7 @@ public class Parser {
             } else {
                 accept(TokenType.EXCLAMATION);
             }
-            Expression e = parseExpression();
+            Expression e = parseUnary();
             exp = new UnaryExpr(op, e, null);
         } else {
             return parseExpression();
