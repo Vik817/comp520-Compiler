@@ -15,6 +15,7 @@ public class Parser {
 
     public FieldDeclList fieldList = new FieldDeclList();
     public MethodDeclList methodList = new MethodDeclList();
+    public ClassDeclList classList = new ClassDeclList();
     public Parser(Scanner scanner, ErrorReporter errors) {
         this._scanner = scanner;
         this._errors = errors;
@@ -33,7 +34,7 @@ public class Parser {
     // Program ::= (ClassDeclaration)* eot
     private Package parseProgram() throws SyntaxError {
         // TODO: Keep parsing class declarations until eot
-        ClassDeclList classList = new ClassDeclList();
+        classList = new ClassDeclList();
         while (_currentToken.getTokenType() != TokenType.EOT) {
             classList.add(parseClassDeclaration());
         }
@@ -64,7 +65,7 @@ public class Parser {
         return classdecl;
     }
 
-    private MemberDecl parseFieldDeclaration() throws SyntaxError {
+    private FieldDecl parseFieldDeclaration() throws SyntaxError {
         FieldDecl fieldD;
         boolean isPriv = parseVisibility();
         boolean isStatic = parseAccess();
@@ -364,21 +365,20 @@ public class Parser {
 
     private Expression parseExpression() throws SyntaxError {
         //Should check for an OPERATOR at the end of each one, to see if we have Expression binop Expression
-        Expression currentExpression = null;
         TokenType theType = _currentToken.getTokenType();
         if (theType == TokenType.LPAREN) { // ( Expression )
             accept(TokenType.LPAREN);
             Expression e = parseExpression();
             accept(TokenType.RPAREN);
-            currentExpression = e;
+            return e;
         } else if (theType == TokenType.NUM) {
             IntLiteral myInt = new IntLiteral(_currentToken);
             accept(TokenType.NUM);
-            currentExpression = new LiteralExpr(myInt, null);
+            return new LiteralExpr(myInt, null);
         } else if (theType == TokenType.TRUEFALSE) {
             BooleanLiteral myBool = new BooleanLiteral(_currentToken);
             accept(TokenType.TRUEFALSE);
-            currentExpression = new LiteralExpr(myBool, null);
+            return new LiteralExpr(myBool, null);
         } else if (theType == TokenType.NEW) {
             accept(TokenType.NEW);
             if (_currentToken.getTokenType() == TokenType.ID) {
@@ -389,11 +389,11 @@ public class Parser {
                     accept(TokenType.LBRACK);
                     Expression e = parseExpression();
                     accept(TokenType.RBRACK);
-                    currentExpression =  new NewArrayExpr(ct, e, null);
+                    return  new NewArrayExpr(ct, e, null);
                 } else { // new id()
                     accept(TokenType.LPAREN);
                     accept(TokenType.RPAREN);
-                    currentExpression = new NewObjectExpr(ct, null);
+                    return new NewObjectExpr(ct, null);
                 }
             } else if (_currentToken.getTokenType() == TokenType.INT) { // new int[Expression]
                 BaseType type = new BaseType(TypeKind.INT, null);
@@ -401,25 +401,15 @@ public class Parser {
                 accept(TokenType.LBRACK);
                 Expression e = parseExpression();
                 accept(TokenType.RBRACK);
-                currentExpression = new NewArrayExpr(type, e, null);
+                return new NewArrayExpr(type, e, null);
             }
-        } else if (theType == TokenType.NEGATIVE) { //unop Expression
-            Operator op = new Operator(_currentToken);
-            accept(TokenType.NEGATIVE);
-            Expression e = parseExpression();
-            currentExpression = new UnaryExpr(op, e, null);
-        } else if (theType == TokenType.EXCLAMATION) { //unop Expression
-            Operator op = new Operator(_currentToken);
-            accept(TokenType.EXCLAMATION);
-            Expression e = parseExpression();
-            currentExpression = new UnaryExpr(op, e, null);
         } else if (theType == TokenType.ID || theType == TokenType.THIS) { // Reference
             Reference ref = parseReference();
             if (_currentToken.getTokenType() == TokenType.LBRACK) { // Reference [Expression]
                 accept(TokenType.LBRACK);
                 Expression e = parseExpression();
                 accept(TokenType.RBRACK);
-                currentExpression = new IxExpr(ref, e, null);
+                return new IxExpr(ref, e, null);
             } else if (_currentToken.getTokenType() == TokenType.LPAREN) { // Reference (ArgumentList?)
                 ExprList list = new ExprList();
                 accept(TokenType.LPAREN);
@@ -428,36 +418,118 @@ public class Parser {
                     list = parseArgumentList();
                 }
                 accept(TokenType.RPAREN);
-                currentExpression = new CallExpr(ref, list, null);
+                return new CallExpr(ref, list, null);
             } else { //Just Reference
-                currentExpression = new RefExpr(ref, null);
+                return new RefExpr(ref, null);
             }
+        } else if (_currentToken.getTokenType() == TokenType.OPERATOR || _currentToken.getTokenType() == TokenType.NEGATIVE) {
+            return parseOr();
+
+
+//            switch (_currentToken.getTokenType()) {
+//                case OPERATOR:
+//                    while (_currentToken.getTokenType() == TokenType.OPERATOR) {
+//                        Operator oper = new Operator(_currentToken);
+//                        accept(TokenType.OPERATOR);
+//                        Expression secondEx = parseExpression();
+//                        return new BinaryExpr(oper, currentExpression, secondEx, null);
+//                    }
+//                case NEGATIVE:
+//                    while (_currentToken.getTokenType() == TokenType.NEGATIVE) {
+//                        Operator oper = new Operator(_currentToken);
+//                        accept(TokenType.NEGATIVE);
+//                        Expression secondEx = parseExpression();
+//                        return new BinaryExpr(oper, currentExpression, secondEx, null);
+//                    }
+//            }
         } else {
             accept(TokenType.NUM); //Error checking
         }
-        //Below is for when you have Expression binop Expression
-        if (_currentToken.getTokenType() == TokenType.OPERATOR || _currentToken.getTokenType() == TokenType.NEGATIVE) {
-            switch (_currentToken.getTokenType()) {
-                case OPERATOR:
-                    while (_currentToken.getTokenType() == TokenType.OPERATOR) {
-                        Operator oper = new Operator(_currentToken);
-                        accept(TokenType.OPERATOR);
-                        Expression secondEx = parseExpression();
-                        return new BinaryExpr(oper, currentExpression, secondEx, null);
-                    }
-                case NEGATIVE:
-                    while (_currentToken.getTokenType() == TokenType.NEGATIVE) {
-                        Operator oper = new Operator(_currentToken);
-                        accept(TokenType.NEGATIVE);
-                        Expression secondEx = parseExpression();
-                        return new BinaryExpr(oper, currentExpression, secondEx, null);
-                    }
-            }
+
+
+        return null;
+    }
+
+    private Expression parseOr() {
+        Expression exp = parseAnd();
+        while(_currentToken.getTokenText().equals("||")) {
+            Operator op = new Operator(_currentToken);
+            accept(TokenType.OPERATOR);
+            Expression e2 = parseAnd();
+            exp = new BinaryExpr(op, exp, e2, null);
         }
-        return currentExpression;
-
-
-
+        return exp;
+    }
+    private Expression parseAnd() {
+        Expression exp = parseEquals();
+        while(_currentToken.getTokenText().equals("&&")) {
+            Operator op = new Operator(_currentToken);
+            accept(TokenType.OPERATOR);
+            Expression e2 = parseEquals();
+            exp = new BinaryExpr(op, exp, e2, null);
+        }
+        return exp;
+    }
+    private Expression parseEquals() {
+        Expression exp = parseRelational();
+        while(_currentToken.getTokenText().equals("==") || _currentToken.getTokenText().equals("!=")) {
+            Operator op = new Operator(_currentToken);
+            accept(TokenType.OPERATOR);
+            Expression e2 = parseRelational();
+            exp = new BinaryExpr(op, exp, e2, null);
+        }
+        return exp;
+    }
+    private Expression parseRelational() {
+        Expression exp = parseAdditive();
+        while(_currentToken.getTokenText().equals("<=") || _currentToken.getTokenText().equals(">=")
+                || _currentToken.getTokenText().equals("<") || _currentToken.getTokenText().equals(">")) {
+            Operator op = new Operator(_currentToken);
+            accept(TokenType.OPERATOR);
+            Expression e2 = parseEquals();
+            exp = new BinaryExpr(op, exp, e2, null);
+        }
+        return exp;
+    }
+    private Expression parseAdditive() {
+        Expression exp = parseMultiplicative();
+        while(_currentToken.getTokenText().equals("+") || _currentToken.getTokenText().equals("-")) {
+            Operator op = new Operator(_currentToken);
+            if(_currentToken.getTokenType() == TokenType.NEGATIVE) {
+                accept(TokenType.NEGATIVE);
+            } else {
+                accept(TokenType.OPERATOR);
+            }
+            Expression e2 = parseMultiplicative();
+            exp = new BinaryExpr(op, exp, e2, null);
+        }
+        return exp;
+    }
+    private Expression parseMultiplicative() {
+        Expression exp = parseUnary();
+        while(_currentToken.getTokenText().equals("*") || _currentToken.getTokenText().equals("/")) {
+            Operator op = new Operator(_currentToken);
+            accept(TokenType.OPERATOR);
+            Expression e2 = parseUnary();
+            exp = new BinaryExpr(op, exp, e2, null);
+        }
+        return exp;
+    }
+    private Expression parseUnary() {
+        Expression exp = null;
+        if(_currentToken.getTokenText().equals("-") || _currentToken.getTokenText().equals("!")) {
+            Operator op = new Operator(_currentToken);
+            if(_currentToken.getTokenType() == TokenType.NEGATIVE) {
+                accept(TokenType.NEGATIVE);
+            } else {
+                accept(TokenType.EXCLAMATION);
+            }
+            Expression e = parseExpression();
+            exp = new UnaryExpr(op, e, null);
+        } else {
+            return parseExpression();
+        }
+        return exp;
     }
 
     // This method will accept the token and retrieve the next token.
