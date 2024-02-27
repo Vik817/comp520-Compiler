@@ -465,7 +465,7 @@ public class Parser {
                 || _currentToken.getTokenText().equals("<") || _currentToken.getTokenText().equals(">")) {
             Operator op = new Operator(_currentToken);
             accept(TokenType.OPERATOR);
-            Expression e2 = parseEquals();
+            Expression e2 = parseAdditive();
             exp = new BinaryExpr(op, exp, e2, null);
         }
         return exp;
