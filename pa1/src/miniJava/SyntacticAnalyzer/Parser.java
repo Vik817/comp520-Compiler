@@ -332,10 +332,9 @@ public class Parser {
                 }
             }
         } else if (type == TokenType.RETURN) { // return Expression? ;
-            //Note, I was parsing an ArgumentList instead of an Expression, kind of confused why it worked. Check with pa1 tests
             accept(TokenType.RETURN);
             Expression e = null;
-            while (_currentToken.getTokenType() != TokenType.SEMICOLON) {
+            if (_currentToken.getTokenType() != TokenType.SEMICOLON) {
                 e = parseOr();
             }
             accept(TokenType.SEMICOLON);
@@ -402,6 +401,8 @@ public class Parser {
                 Expression e = parseOr();
                 accept(TokenType.RBRACK);
                 return new NewArrayExpr(type, e, null);
+            } else {
+                accept(TokenType.NUM);
             }
         } else if (theType == TokenType.ID || theType == TokenType.THIS) { // Reference
             Reference ref = parseReference();
@@ -494,7 +495,7 @@ public class Parser {
         return exp;
     }
     private Expression parseUnary() {
-        Expression exp = null;
+        Expression exp;
         if(_currentToken.getTokenText().equals("-") || _currentToken.getTokenText().equals("!")) {
             Operator op = new Operator(_currentToken);
             if(_currentToken.getTokenType() == TokenType.NEGATIVE) {
@@ -515,9 +516,9 @@ public class Parser {
     private void accept(TokenType expectedType) throws SyntaxError {
         if (_currentToken.getTokenType() == expectedType) {
             _currentToken = _scanner.scan();
+            //System.out.println(_currentToken.getTokenText());
             return;
         }
-
         // TODO: Report an error here.
         //  "Expected token X, but got Y"
         _errors.reportError("Expected: " + expectedType +
