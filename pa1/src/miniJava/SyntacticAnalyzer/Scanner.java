@@ -103,6 +103,8 @@ public class Scanner {
                     return makeToken(TokenType.INT);
                 case "boolean":
                     return makeToken(TokenType.BOOLEAN);
+                case "null":
+                    return makeToken(TokenType.NULL);
 
                 default: //id
                     return makeToken(TokenType.ID);

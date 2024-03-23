@@ -423,6 +423,10 @@ public class Parser {
             } else { //Just Reference
                 return new RefExpr(ref, null);
             }
+        } else if(theType == TokenType.NULL) {
+            NullLiteral nLit = new NullLiteral(_currentToken);
+            accept(TokenType.NULL);
+            return new LiteralExpr(nLit, null);
         } else {
             accept(TokenType.NUM);
         }
