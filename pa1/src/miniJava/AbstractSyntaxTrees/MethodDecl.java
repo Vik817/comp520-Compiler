@@ -21,4 +21,6 @@ public class MethodDecl extends MemberDecl {
 	
 	public ParameterDeclList parameterDeclList;
 	public StatementList statementList;
+
+    public ClassDecl classContext;
 }

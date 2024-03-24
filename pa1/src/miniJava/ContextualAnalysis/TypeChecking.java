@@ -34,7 +34,7 @@ public class TypeChecking implements Visitor<Object, TypeDenoter> {
         for(MethodDecl fD : cd.methodDeclList) {
             cd.visit(this, null);
         }
-        return null;
+        return cd.type;
     }
 
     @Override
@@ -43,22 +43,31 @@ public class TypeChecking implements Visitor<Object, TypeDenoter> {
         if(fd.type.typeKind == TypeKind.VOID) {
             reporter.reportError("Declaring as a FieldDecl but should be a MethodDecl");
         }
-        return null;
+        return fd.type;
     }
 
     @Override
     public TypeDenoter visitMethodDecl(MethodDecl md, Object arg) {
-        return null;
+        for(ParameterDecl pd: md.parameterDeclList) {
+            pd.visit(this, null);
+        }
+        for(Statement s : md.statementList) {
+            s.visit(this, null);
+        }
+        return md.type;
     }
 
     @Override
     public TypeDenoter visitParameterDecl(ParameterDecl pd, Object arg) {
-        return null;
+        pd.visit(this, null);
+        return pd.type;
     }
 
+    //Types themselves don't need to return anything
     @Override
     public TypeDenoter visitVarDecl(VarDecl decl, Object arg) {
-        return null;
+        //Might need to check the String issue
+        return decl.type;
     }
 
     @Override
@@ -73,21 +82,35 @@ public class TypeChecking implements Visitor<Object, TypeDenoter> {
 
     @Override
     public TypeDenoter visitArrayType(ArrayType type, Object arg) {
+        type.eltType.visit(this, null);
         return null;
     }
 
     @Override
     public TypeDenoter visitBlockStmt(BlockStmt stmt, Object arg) {
+        for(Statement s: stmt.sl) {
+            s.visit(this, (MethodDecl)arg);
+        }
         return null;
     }
 
     @Override
     public TypeDenoter visitVardeclStmt(VarDeclStmt stmt, Object arg) {
+        TypeDenoter a = (TypeDenoter)stmt.varDecl.visit(this, null);
+        TypeDenoter b = (TypeDenoter)stmt.initExp.visit(this, null);
+        //Need to check and validate that a = b
+        if(!(equalTypes(a, b))) {
+            reporter.reportError("Types are not equal");
+        }
         return null;
     }
 
     @Override
     public TypeDenoter visitAssignStmt(AssignStmt stmt, Object arg) {
+        TypeDenoter currTypeDenoter = stmt.ref.referenceDeclaration.type;
+        if(currTypeDenoter.typeKind == TypeKind.CLASS || currTypeDenoter instanceof BaseType) {
+            typeComparator((TypeDenoter)stmt.ref.visit(this, null), (TypeDenoter)stmt.val.visit(this, null));
+        }
         return null;
     }
 
@@ -173,7 +196,8 @@ public class TypeChecking implements Visitor<Object, TypeDenoter> {
 
     @Override
     public TypeDenoter visitIdentifier(Identifier id, Object arg) {
-        return null;
+        //Need to return the type of where the id was originally declared. Have to visit that
+        return id.dec.visit(this, null);
     }
 
     @Override
@@ -183,23 +207,37 @@ public class TypeChecking implements Visitor<Object, TypeDenoter> {
 
     @Override
     public TypeDenoter visitIntLiteral(IntLiteral num, Object arg) {
-        return null;
+        return new BaseType(TypeKind.INT, null);
     }
 
     @Override
     public TypeDenoter visitBooleanLiteral(BooleanLiteral bool, Object arg) {
-        return null;
+        return new BaseType(TypeKind.BOOLEAN, null);
     }
 
     @Override
     public TypeDenoter visitNullLiteral(NullLiteral nullLit, Object arg) {
-        return null;
+        return new BaseType(TypeKind.CLASS, null);
     }
 
     private TypeDenoter typeComparator(TypeDenoter a, TypeDenoter b) {
         if(a.typeKind.equals(b.typeKind)) {
             return a;
+        } else {
+            throw new TypeCheckingError();
         }
-        return null;
+    }
+
+    private boolean equalTypes(TypeDenoter a, TypeDenoter b) {
+        if(a.typeKind.equals(b.typeKind)) {
+            return true;
+        }
+        return false;
+    }
+
+    class TypeCheckingError extends Error {
+        private static final long serialVersionUID = -6461942006097999362L;
+
+
     }
 }
