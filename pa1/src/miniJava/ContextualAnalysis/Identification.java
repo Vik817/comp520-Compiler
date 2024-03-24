@@ -4,6 +4,8 @@ import miniJava.AbstractSyntaxTrees.*;
 import miniJava.AbstractSyntaxTrees.Package;
 import miniJava.ContextualAnalysis.*;
 import miniJava.ErrorReporter;
+import miniJava.SyntacticAnalyzer.Token;
+import miniJava.SyntacticAnalyzer.TokenType;
 
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
@@ -22,11 +24,15 @@ public class Identification implements Visitor {
         pack = tree;
 
 
+
+
     }
 
     public void startIdentifying() {
+
         pack.visit(this, null);
     }
+
 
     ///////////////////////////////////////////////////////////////////////////////
     //
@@ -35,6 +41,34 @@ public class Identification implements Visitor {
     ///////////////////////////////////////////////////////////////////////////////
     @Override
     public Object visitPackage(Package prog, Object arg) { //Want to start opening scope here
+        ///Lets add IMPORTS here
+        si.openScope();
+        ClassDecl StringClass = new ClassDecl("String", new FieldDeclList(), new MethodDeclList(), null);
+
+        ClassDecl PrintStreamClass = new ClassDecl("_PrintStream", new FieldDeclList(), new MethodDeclList(), null);
+        PrintStreamClass.methodDeclList.add(
+                new MethodDecl(new FieldDecl(false, false,
+                        new BaseType(TypeKind.VOID, null),
+                        "println", null),
+                        new ParameterDeclList(),
+                        new StatementList(), null)
+        );
+        PrintStreamClass.methodDeclList.get(0).parameterDeclList.add(
+                new ParameterDecl(new BaseType(TypeKind.INT, null), "_PrintStream", null)
+        );
+
+        ClassDecl SystemClass = new ClassDecl("System", new FieldDeclList(), new MethodDeclList(), null);
+        SystemClass.fieldDeclList.add(new FieldDecl(false, true,
+                new ClassType(new Identifier(new Token(TokenType.CLASS, "_PrintStream")), null), "out", null));
+
+        si.addDeclaration("System", SystemClass, null);
+        si.addDeclaration("_PrintStream", PrintStreamClass, null);
+        si.addDeclaration("String", StringClass, null);
+
+
+
+
+
         si.openScope();
         for(ClassDecl cD: prog.classDeclList) { //Add all classDecls in the Package's AST to level 0 IDTable
             si.addDeclaration(cD.name, cD, null);
@@ -42,6 +76,7 @@ public class Identification implements Visitor {
         for(ClassDecl cD: prog.classDeclList) {
             cD.visit(this, null);
         }
+        si.closeScope();
         si.closeScope();
         return null;
     }

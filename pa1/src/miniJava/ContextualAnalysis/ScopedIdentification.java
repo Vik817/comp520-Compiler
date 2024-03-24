@@ -55,8 +55,7 @@ public class ScopedIdentification {
                 }
                 this.currentTab.updateTable(a, d); //Adds a classDecl
             }
-        }
-        if(d instanceof MemberDecl) { //Know this is at level 1. Need to check if it is private
+        } else if(d instanceof MemberDecl) { //Know this is at level 1. Need to check if it is private
             if(contextDecl != null) {
                 for(IDTable t: IDTables) {
                     if(t.level == 1) { //Checks only IDTable 1
@@ -76,6 +75,7 @@ public class ScopedIdentification {
             for(IDTable tab: IDTables) { //For each table in IDTables
                 if(tab.level >= newTabScope) { //Iterate through tables with its scope level or higher
                     if(tab.theTable.containsKey(a)) {
+                        System.out.println(tab.theTable);
                         throw new IdentificationError(); //Make this an identification error
                     }
                 }

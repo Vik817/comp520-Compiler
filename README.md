@@ -1,3 +1,12 @@
-# comp520-pa-starter
+# comp520-programming assignment
 
-Starter code for PA1 has been uploaded.
+Progress so far:
+
+PA1: Done
+
+PA2: Done
+
+PA3: In progress
+
+PA4: Not started
+PA5: Not started

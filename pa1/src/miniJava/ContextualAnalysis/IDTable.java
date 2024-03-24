@@ -15,11 +15,11 @@ class IDTable {
     }
 
     public void updateTable(String s, Declaration d) {
-        if(d instanceof ClassDecl) { //Level 0
-            this.level = 0;
-        } else {
-            throw new Error();
-        }
+//        if(d instanceof ClassDecl) { //Level 0
+//            this.level = 0;
+//        } else {
+//            throw new Error();
+//        }
 
         theTable.put(s, d);
     }

@@ -4,6 +4,7 @@ import miniJava.AbstractSyntaxTrees.ASTDisplay;
 import miniJava.AbstractSyntaxTrees.Package;
 import miniJava.SyntacticAnalyzer.Parser;
 import miniJava.SyntacticAnalyzer.Scanner;
+import miniJava.ContextualAnalysis.*;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -27,8 +28,23 @@ public class Compiler {
                     System.out.println("Error");
                     reporter.outputErrors();
                 } else {
-                    ASTDisplay display = new ASTDisplay();
-                    display.showTree(p);
+                    //ASTDisplay display = new ASTDisplay();
+                    //display.showTree(p);
+                    Identification id = new Identification(p, reporter);
+                    id.startIdentifying();
+                    if (reporter.hasErrors()) {
+                        System.out.println("Error");
+                        reporter.outputErrors();
+                    } else {
+                        TypeChecking tC = new TypeChecking(p, reporter);
+                        tC.startTypeChecking();
+                        if (reporter.hasErrors()) {
+                            System.out.println("Error");
+                            reporter.outputErrors();
+                        } else {
+                            System.out.println("Success");
+                        }
+                    }
                 }
             } catch (FileNotFoundException e) {
                 System.out.println("File not found");

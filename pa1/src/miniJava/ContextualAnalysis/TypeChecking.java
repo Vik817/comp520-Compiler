@@ -3,6 +3,9 @@ package miniJava.ContextualAnalysis;
 import miniJava.AbstractSyntaxTrees.*;
 import miniJava.AbstractSyntaxTrees.Package;
 import miniJava.ErrorReporter;
+import miniJava.SyntacticAnalyzer.TokenType;
+
+import java.lang.reflect.Type;
 
 public class TypeChecking implements Visitor<Object, TypeDenoter> {
 
@@ -31,8 +34,8 @@ public class TypeChecking implements Visitor<Object, TypeDenoter> {
         for(FieldDecl fD : cd.fieldDeclList) {
             fD.visit(this, null);
         }
-        for(MethodDecl fD : cd.methodDeclList) {
-            cd.visit(this, null);
+        for(MethodDecl mD : cd.methodDeclList) {
+            mD.visit(this, null);
         }
         return cd.type;
     }
@@ -59,7 +62,6 @@ public class TypeChecking implements Visitor<Object, TypeDenoter> {
 
     @Override
     public TypeDenoter visitParameterDecl(ParameterDecl pd, Object arg) {
-        pd.visit(this, null);
         return pd.type;
     }
 
@@ -99,8 +101,8 @@ public class TypeChecking implements Visitor<Object, TypeDenoter> {
         TypeDenoter a = (TypeDenoter)stmt.varDecl.visit(this, null);
         TypeDenoter b = (TypeDenoter)stmt.initExp.visit(this, null);
         //Need to check and validate that a = b
-        if(!(equalTypes(a, b))) {
-            reporter.reportError("Types are not equal");
+        if((typeComparator(a, b)) == null) {
+            reportTypeError("Types are not equal");
         }
         return null;
     }
@@ -120,78 +122,235 @@ public class TypeChecking implements Visitor<Object, TypeDenoter> {
     }
 
     @Override
-    public TypeDenoter visitCallStmt(CallStmt stmt, Object arg) {
+    public TypeDenoter visitCallStmt(CallStmt stmt, Object arg) { //Checks if the arg list types match the provided method's parameter types
+        if(stmt.argList.size() == ((MethodDecl)arg).parameterDeclList.size()) {
+            for(int i = 0; i < stmt.argList.size(); i++) {
+                TypeDenoter t = typeComparator(stmt.argList.get(i).visit(this, null),
+                        ((MethodDecl)arg).parameterDeclList.get(i).visit(this, null));
+                if(t == null) {
+                    reportTypeError("Passed argument type doesn't match parameter type");
+                }
+            }
+        } else {
+            reportTypeError("Provided argument number doesn't match Method's number of parameters");
+            //throw new TypeCheckingError(); //Provided arguments don't match MethodDecl's number of parameters
+        }
         return null;
     }
 
     @Override
     public TypeDenoter visitReturnStmt(ReturnStmt stmt, Object arg) {
+        //Need to check if method is void, if so nothing should be returned
+        if(((MethodDecl)arg).type.typeKind == TypeKind.VOID) {
+            if(stmt.returnExpr != null) {
+                reportTypeError("Returning something to a void method");
+            }
+        } else { //If method is not void, need to check method's return type and see if it matches the Expression's type
+            if(stmt.returnExpr != null) {
+                TypeDenoter t = typeComparator(((MethodDecl)arg).type, stmt.returnExpr.visit(this, (MethodDecl)arg));
+                if(t == null) {
+                    reportTypeError("Incompatible return type");
+                }
+            } else {
+                reportTypeError("Not returning anything to a method that needs a return value");
+            }
+        }
         return null;
     }
 
     @Override
     public TypeDenoter visitIfStmt(IfStmt stmt, Object arg) {
+        //If statements are always a comparison, so the stmt.Expression is the condition. Conditions are booleans
+        TypeDenoter t = typeComparator(((TypeDenoter)stmt.cond.visit(this, null)), new BaseType(TypeKind.BOOLEAN, null));
+        if(t == null) {
+            reportTypeError("Not a condition/comparison in the if statement's condition");
+        }
+        stmt.thenStmt.visit(this, (MethodDecl)arg);
+        if(stmt.elseStmt != null) {
+            stmt.elseStmt.visit(this, (MethodDecl)arg);
+        }
         return null;
     }
 
     @Override
     public TypeDenoter visitWhileStmt(WhileStmt stmt, Object arg) {
+        //Similar logic to the visitIfStmt
+        TypeDenoter t = typeComparator(((TypeDenoter)stmt.cond.visit(this, null)), new BaseType(TypeKind.BOOLEAN, null));
+        if(t == null) {
+            reportTypeError("Not a condition/comparison in the if statement's condition");
+        }
+        stmt.body.visit(this, (MethodDecl)arg);
         return null;
     }
 
     @Override
     public TypeDenoter visitUnaryExpr(UnaryExpr expr, Object arg) {
-        return null;
+        TypeDenoter originalOperator = expr.expr.visit(this, (MethodDecl)arg);
+        if(expr.operator.kind == TokenType.EXCLAMATION) { //Unary negation on a bool returns a bool
+            TypeDenoter t = typeComparator(new BaseType(TypeKind.BOOLEAN, null), originalOperator);
+            if(t == null) {
+                reportTypeError("Boolean negation did not return type boolean");
+            } else {
+                return new BaseType(TypeKind.BOOLEAN, null);
+            }
+        } else if(expr.operator.kind == TokenType.NEGATIVE) { //Unary negation on an int returns an int
+            TypeDenoter t = typeComparator(new BaseType(TypeKind.BOOLEAN, null), originalOperator);
+            if(t == null) {
+                reportTypeError("Integer negation did not return type integer");
+            } else {
+                return new BaseType(TypeKind.BOOLEAN, null);
+            }
+        } else {
+            reportTypeError("Invalid operator for unary negation");
+        }
+        return new BaseType(TypeKind.ERROR, null);
     }
 
     @Override
     public TypeDenoter visitBinaryExpr(BinaryExpr expr, Object arg) {
-        return null;
+        TypeDenoter leftExpr = expr.left.visit(this, null);
+        TypeDenoter rightExpr = expr.right.visit(this, null);
+        Operator op = expr.operator;
+        //Need to check every operation besides unary and see if it returned the right type
+        //Could return the value of the operation
+        if(op.spelling.equals("&&") || op.spelling.equals("||")) {
+            TypeDenoter a = typeComparator(new BaseType(TypeKind.BOOLEAN, null), leftExpr);
+            if(a == null) {
+                reportTypeError("Left expression not a boolean in a boolean operation");
+                return new BaseType(TypeKind.ERROR, null);
+            }
+            TypeDenoter b = typeComparator(new BaseType(TypeKind.BOOLEAN, null), rightExpr);
+            if(b == null) {
+                reportTypeError("Right expression not a boolean in a boolean operation");
+                return new BaseType(TypeKind.ERROR, null);
+            }
+            //If neither is null, I can return a BOOLEAN
+            return new BaseType(TypeKind.BOOLEAN, null);
+        } else if(op.spelling.equals(">") || op.spelling.equals("<") ||
+                op.spelling.equals(">=") || op.spelling.equals("<=")) {
+            TypeDenoter a = typeComparator(new BaseType(TypeKind.INT, null), leftExpr);
+            if(a == null) {
+                reportTypeError("Left expression not an int in an int operation");
+                return new BaseType(TypeKind.ERROR, null);
+            }
+            TypeDenoter b = typeComparator(new BaseType(TypeKind.INT, null), rightExpr);
+            if(b == null) {
+                reportTypeError("Right expression not an int in an int operation");
+                return new BaseType(TypeKind.ERROR, null);
+            }
+            //If neither is null, I can return a BOOLEAN
+            return new BaseType(TypeKind.BOOLEAN, null);
+        } else if(op.spelling.equals("+") || op.spelling.equals("-") || op.spelling.equals("*") || op.spelling.equals("/")) {
+            TypeDenoter a = typeComparator(new BaseType(TypeKind.INT, null), leftExpr);
+            if(a == null) {
+                reportTypeError("Left expression not an int in an int operation");
+                return new BaseType(TypeKind.ERROR, null);
+            }
+            TypeDenoter b = typeComparator(new BaseType(TypeKind.INT, null), rightExpr);
+            if(b == null) {
+                reportTypeError("Right expression not an int in an int operation");
+                return new BaseType(TypeKind.ERROR, null);
+            }
+            //If neither is null, I can return a BOOLEAN
+            return new BaseType(TypeKind.INT, null);
+        } else if(op.spelling.equals("==") || op.spelling.equals("!=")) {
+            TypeDenoter comparison = typeComparator(leftExpr, rightExpr);
+            if(comparison == null) { //They aren't equal
+                if(op.spelling.equals("!=")) { //If they weren't supposed to be equal
+                    return new BaseType(TypeKind.BOOLEAN, null);
+                } else {
+                    reportTypeError("Expressions should be equal but aren't");
+                    return new BaseType(TypeKind.ERROR, null);
+                }
+            } else {
+                if(op.spelling.equals("==")) { //If they were supposed to be equal
+                    return new BaseType(TypeKind.BOOLEAN, null);
+                } else {
+                    reportTypeError("Expressions shouldn't be equal but are");
+                    return new BaseType(TypeKind.ERROR, null);
+                }
+            }
+        }
+        return new BaseType(TypeKind.ERROR, null);
     }
 
     @Override
     public TypeDenoter visitRefExpr(RefExpr expr, Object arg) {
-        return null;
+        return expr.ref.visit(this, null);
     }
 
     @Override
     public TypeDenoter visitIxExpr(IxExpr expr, Object arg) {
-        return null;
+        //If i have something of the format Reference[Expression], The expression should be of type INT
+        //And the Reference should be of type ARRAY
+        if(expr.ref.visit(this, null) instanceof ArrayType) {
+            //check if the expression is an integer
+            if (typeComparator(expr.ixExpr.visit(this, null), new BaseType(TypeKind.INT, null)) != null) {
+                return new ArrayType(expr.ixExpr.visit(this, null), null);
+            } else {
+                reportTypeError("Invalid expression type in IxExpression");
+                return new BaseType(TypeKind.ERROR, null);
+            }
+        } else {
+            return new BaseType(TypeKind.ERROR, null);
+        }
     }
 
     @Override
     public TypeDenoter visitCallExpr(CallExpr expr, Object arg) {
-        return null;
+        //Similar to visitCallStmt
+        //However, need to access the Method that the expression is referring to.
+        //Can use the reference's declaration, which identifies where the reference's identifier was declared
+        if(expr.argList.size() == ((MethodDecl)expr.functionRef.referenceDeclaration).parameterDeclList.size()) {
+            for(int i = 0; i < expr.argList.size(); i++) {
+                TypeDenoter t = typeComparator(expr.argList.get(i).visit(this, null),
+                        ((MethodDecl)expr.functionRef.referenceDeclaration).parameterDeclList.get(i).visit(this, null));
+                if(t == null) {
+                    reportTypeError("Passed argument type doesn't match parameter type");
+                }
+            }
+        } else {
+            reportTypeError("Provided argument number doesn't match Method's number of parameters");
+            return new BaseType(TypeKind.ERROR, null);
+            //Provided arguments don't match MethodDecl's number of parameters
+        }
+        return ((MethodDecl)expr.functionRef.referenceDeclaration).type;
     }
 
     @Override
     public TypeDenoter visitLiteralExpr(LiteralExpr expr, Object arg) {
+        //Could be IntLiteral or BooleanLiteral
+        //Need to visit to see
+        expr.lit.visit(this, null);
         return null;
     }
 
     @Override
     public TypeDenoter visitNewObjectExpr(NewObjectExpr expr, Object arg) {
-        return null;
+        return expr.classtype;
     }
 
     @Override
     public TypeDenoter visitNewArrayExpr(NewArrayExpr expr, Object arg) {
+
         return null;
     }
 
     @Override
     public TypeDenoter visitThisRef(ThisRef ref, Object arg) {
-        return null;
+        //Return "this" reference's type. The type of a this reference is the class it is in, which was given in Identification traversal
+        return ref.referenceDeclaration.type;
     }
 
     @Override
     public TypeDenoter visitIdRef(IdRef ref, Object arg) {
-        return null;
+        return ref.id.dec.type;
     }
 
     @Override
     public TypeDenoter visitQRef(QualRef ref, Object arg) {
-        return null;
+        //Only thing that matters is the type of the leftmost Reference
+        return ref.referenceDeclaration.type;
     }
 
     @Override
@@ -224,17 +383,13 @@ public class TypeChecking implements Visitor<Object, TypeDenoter> {
         if(a.typeKind.equals(b.typeKind)) {
             return a;
         } else {
-            throw new TypeCheckingError();
+            return null;
         }
     }
 
-    private boolean equalTypes(TypeDenoter a, TypeDenoter b) {
-        if(a.typeKind.equals(b.typeKind)) {
-            return true;
-        }
-        return false;
+    private void reportTypeError(String message) {
+        reporter.reportError(message);
     }
-
     class TypeCheckingError extends Error {
         private static final long serialVersionUID = -6461942006097999362L;
 
