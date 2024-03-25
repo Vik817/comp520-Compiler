@@ -54,12 +54,14 @@ public class Identification implements Visitor {
                         new StatementList(), null)
         );
         PrintStreamClass.methodDeclList.get(0).parameterDeclList.add(
-                new ParameterDecl(new BaseType(TypeKind.INT, null), "_PrintStream", null)
+                new ParameterDecl(new BaseType(TypeKind.INT, null), "n", null)
         );
 
         ClassDecl SystemClass = new ClassDecl("System", new FieldDeclList(), new MethodDeclList(), null);
+        Identifier theIdentifier = new Identifier(new Token(TokenType.ID, "_PrintStream"));
+        theIdentifier.dec = PrintStreamClass;
         SystemClass.fieldDeclList.add(new FieldDecl(false, true,
-                new ClassType(new Identifier(new Token(TokenType.CLASS, "_PrintStream")), null), "out", null));
+                new ClassType(theIdentifier, null), "out", null));
 
         si.addDeclaration("System", SystemClass, null);
         si.addDeclaration("_PrintStream", PrintStreamClass, null);
@@ -160,8 +162,13 @@ public class Identification implements Visitor {
 
     @Override
     public Object visitClassType(ClassType type, Object arg) {
-        si.findDeclaration(type.className.spelling, (MethodDecl)arg);
-        return null;
+        if(si.findDeclaration(type.className.spelling, (MethodDecl)arg) instanceof ClassDecl) {
+            return null;
+        } else {
+            er.reportError("Classtype error");
+            throw new Error();
+        }
+
     }
 
     @Override
@@ -271,7 +278,7 @@ public class Identification implements Visitor {
 
     @Override
     public Object visitIxExpr(IxExpr expr, Object arg) {
-        expr.visit(this, (MethodDecl)arg);
+        expr.ref.visit(this, (MethodDecl)arg);
         expr.ixExpr.visit(this, (MethodDecl)arg);
         return null;
     }
@@ -333,6 +340,8 @@ public class Identification implements Visitor {
     public Object visitQRef(QualRef ref, Object arg) {
         ref.ref.visit(this, (MethodDecl)arg); //Will continue to visit QualRefs until It ends in an identifier
         if(ref.ref.referenceDeclaration == null) {
+            System.out.println("what");
+            er.reportError("No reference declaration error");
             throw new Error();
         }
         Declaration theContext = ref.ref.referenceDeclaration; //Provide the current context of the referencce
@@ -366,13 +375,17 @@ public class Identification implements Visitor {
 
             if(member == null) {
                 er.reportError("Reference not found");
+                throw new Error();
             }
             if(member.isPrivate) {
                 er.reportError("Cannot access private member");
+                throw new Error();
             }
             if(((MethodDecl)arg).isStatic) {
                 if(!member.isStatic) {
+                    System.out.println(member.name);
                     er.reportError("Accessing nonstatic member from a static class");
+                    throw new Error();
                 }
             }
 
@@ -416,11 +429,11 @@ public class Identification implements Visitor {
                 if(member.isPrivate) {
                     er.reportError("Cannot access private member");
                 }
-                if(((MethodDecl)arg).isStatic) {
-                    if(!member.isStatic) {
-                        er.reportError("Accessing nonstatic member from a static class");
-                    }
-                } //Might not need this
+//                if(((MethodDecl)arg).isStatic) {
+//                    if(!member.isStatic) {
+//                        er.reportError("Accessing nonstatic member from a static class");
+//                    }
+//                } //Might not need this
                 ref.id.dec = member;
                 ref.referenceDeclaration = ref.id.dec;
             }
@@ -460,11 +473,11 @@ public class Identification implements Visitor {
                 if(member.isPrivate) {
                     er.reportError("Cannot access private member");
                 }
-                if(((MethodDecl)arg).isStatic) {
-                    if(!member.isStatic) {
-                        er.reportError("Accessing nonstatic member from a static class");
-                    }
-                } //Might not need this
+//                if(((MethodDecl)arg).isStatic) {
+//                    if(!member.isStatic) {
+//                        er.reportError("Accessing nonstatic member from a static class");
+//                    }
+//                } //Might not need this
                 ref.id.dec = member;
                 ref.referenceDeclaration = ref.id.dec;
             }

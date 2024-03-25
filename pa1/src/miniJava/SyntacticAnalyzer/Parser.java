@@ -192,7 +192,6 @@ public class Parser {
 
     private Reference parseReference() throws SyntaxError {
         Reference r = null;
-        Identifier a = null;
         if (_currentToken.getTokenType() == TokenType.ID) {
             Identifier i = new Identifier(_currentToken);
             accept(TokenType.ID);
@@ -209,10 +208,10 @@ public class Parser {
         }
         while (_currentToken.getTokenType() == TokenType.DOT) {
             accept(TokenType.DOT);
-            a = new Identifier(_currentToken);
+            r = new QualRef(r, new Identifier(_currentToken), null);
             accept(TokenType.ID);
         }
-        return new QualRef(r, a, null);
+        return r;
         
 
     }
@@ -301,10 +300,10 @@ public class Parser {
                     Identifier a = null;
                     while(_currentToken.getTokenType() == TokenType.DOT) {
                         accept(TokenType.DOT);
-                        a = new Identifier(_currentToken);
+                        aR = new QualRef(aR, new Identifier(_currentToken), null);
                         accept(TokenType.ID);
                     }
-                    aR = new QualRef(aR, a, null); //Redefine aR to be a QualRef
+                    //aR = new QualRef(aR, a, null); //Redefine aR to be a QualRef
                 }
                 if (_currentToken.getTokenType() == TokenType.ONEEQUAL) { // Reference = Expression;
                     accept(TokenType.ONEEQUAL);

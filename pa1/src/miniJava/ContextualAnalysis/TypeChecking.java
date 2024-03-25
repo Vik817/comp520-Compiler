@@ -68,6 +68,10 @@ public class TypeChecking implements Visitor<Object, TypeDenoter> {
     //Types themselves don't need to return anything
     @Override
     public TypeDenoter visitVarDecl(VarDecl decl, Object arg) {
+        //System.out.println(decl.name);
+        if(decl.name.equals("String")) {
+            return new BaseType(TypeKind.UNSUPPORTED, null);
+        }
         //Might need to check the String issue
         return decl.type;
     }
@@ -84,7 +88,7 @@ public class TypeChecking implements Visitor<Object, TypeDenoter> {
 
     @Override
     public TypeDenoter visitArrayType(ArrayType type, Object arg) {
-        type.eltType.visit(this, null);
+        //type.eltType.visit(this, null);
         return null;
     }
 
@@ -137,10 +141,14 @@ public class TypeChecking implements Visitor<Object, TypeDenoter> {
 
     @Override
     public TypeDenoter visitCallStmt(CallStmt stmt, Object arg) { //Checks if the arg list types match the provided method's parameter types
-        if(stmt.argList.size() == ((MethodDecl)arg).parameterDeclList.size()) {
+        if(!(stmt.methodRef.referenceDeclaration instanceof MethodDecl)) {
+            reportTypeError("Not accessing a method");
+            return null;
+        }
+        if(stmt.argList.size() == ((MethodDecl)stmt.methodRef.referenceDeclaration).parameterDeclList.size()) {
             for(int i = 0; i < stmt.argList.size(); i++) {
                 TypeDenoter t = typeComparator(stmt.argList.get(i).visit(this, null),
-                        ((MethodDecl)arg).parameterDeclList.get(i).visit(this, null));
+                        ((MethodDecl)stmt.methodRef.referenceDeclaration).parameterDeclList.get(i).visit(this, null));
                 if(t == null) {
                     reportTypeError("Passed argument type doesn't match parameter type");
                 }
@@ -270,19 +278,22 @@ public class TypeChecking implements Visitor<Object, TypeDenoter> {
         } else if(op.spelling.equals("==") || op.spelling.equals("!=")) {
             TypeDenoter comparison = typeComparator(leftExpr, rightExpr);
             if(comparison == null) { //They aren't equal
-                if(op.spelling.equals("!=")) { //If they weren't supposed to be equal
-                    return new BaseType(TypeKind.BOOLEAN, null);
-                } else {
-                    reportTypeError("Expressions should be equal but aren't");
-                    return new BaseType(TypeKind.ERROR, null);
-                }
+                //First check if i can even compare the types
+                return new BaseType(TypeKind.ERROR, null);
             } else {
-                if(op.spelling.equals("==")) { //If they were supposed to be equal
-                    return new BaseType(TypeKind.BOOLEAN, null);
-                } else {
-                    reportTypeError("Expressions shouldn't be equal but are");
-                    return new BaseType(TypeKind.ERROR, null);
-                }
+                return new BaseType(comparison.typeKind, null);
+//                if(op.spelling.equals("!=")) { //If they weren't supposed to be equal
+//                    return new BaseType(TypeKind.BOOLEAN, null);
+//                } else {
+//                    reportTypeError("Expressions should be equal but aren't");
+//                    return new BaseType(TypeKind.ERROR, null);
+//                }
+//                if(op.spelling.equals("==")) { //If they were supposed to be equal
+//                    return new BaseType(TypeKind.BOOLEAN, null);
+//                } else {
+//                    reportTypeError("Expressions shouldn't be equal but are");
+//                    return new BaseType(TypeKind.ERROR, null);
+//                }
             }
         }
         return new BaseType(TypeKind.ERROR, null);
@@ -340,6 +351,9 @@ public class TypeChecking implements Visitor<Object, TypeDenoter> {
 
     @Override
     public TypeDenoter visitNewObjectExpr(NewObjectExpr expr, Object arg) {
+        if(expr.classtype.className.spelling.equals("String")) {
+            return new BaseType(TypeKind.UNSUPPORTED, null);
+        }
         return expr.classtype;
     }
 
@@ -357,7 +371,12 @@ public class TypeChecking implements Visitor<Object, TypeDenoter> {
 
     @Override
     public TypeDenoter visitIdRef(IdRef ref, Object arg) {
-        return ref.id.dec.type;
+//        if(ref.referenceDeclaration.type instanceof ClassType) {
+//            if(((ClassType)ref.referenceDeclaration.type).className.spelling.equals("String")) {
+//                return new BaseType(TypeKind.UNSUPPORTED, null);
+//            }
+//        }
+        return ref.referenceDeclaration.type;
     }
 
     @Override
@@ -393,6 +412,13 @@ public class TypeChecking implements Visitor<Object, TypeDenoter> {
     }
 
     private TypeDenoter typeComparator(TypeDenoter a, TypeDenoter b) {
+        //System.out.println(a.typeKind);
+        //System.out.println(b.typeKind);
+        if(a.typeKind == TypeKind.UNSUPPORTED && b.typeKind != TypeKind.ERROR) {
+            return null;
+        } else if (a.typeKind != TypeKind.ERROR && b.typeKind == TypeKind.UNSUPPORTED) {
+            return null;
+        }
         if(a.typeKind.equals(b.typeKind)) {
             if(a instanceof ClassType && b instanceof ClassType) {
                 if(((ClassType) a).className.spelling.equals(((ClassType) b).className.spelling)) {

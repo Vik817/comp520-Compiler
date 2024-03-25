@@ -28,8 +28,8 @@ public class Compiler {
                     System.out.println("Error");
                     reporter.outputErrors();
                 } else {
-                    //ASTDisplay display = new ASTDisplay();
-                    //display.showTree(p);
+//                    ASTDisplay display = new ASTDisplay();
+//                    display.showTree(p);
                     Identification id = new Identification(p, reporter);
                     try {
                         id.startIdentifying();
@@ -37,6 +37,7 @@ public class Compiler {
                             System.out.println("Error");
                             reporter.outputErrors();
                         } else {
+                            //System.out.println("Identification done");
                             TypeChecking tC = new TypeChecking(p, reporter);
                             tC.startTypeChecking();
                             if (reporter.hasErrors()) {
