@@ -339,9 +339,9 @@ public class Identification implements Visitor {
     @Override
     public Object visitQRef(QualRef ref, Object arg) {
         ref.ref.visit(this, (MethodDecl)arg); //Will continue to visit QualRefs until It ends in an identifier
-        System.out.println(ref.ref.referenceDeclaration.name);
+        //.println(ref.ref.referenceDeclaration.name);
         if(ref.ref.referenceDeclaration == null) {
-            System.out.println("what");
+            //System.out.println("what");
             er.reportError("No reference declaration error");
             throw new Error();
         }
@@ -384,7 +384,7 @@ public class Identification implements Visitor {
             }
             if(((MethodDecl)arg).isStatic) {
                 if(!member.isStatic) {
-                    System.out.println(member.name);
+                    //System.out.println(member.name);
                     er.reportError("Accessing nonstatic member from a static class");
                     throw new Error();
                 }
@@ -393,10 +393,10 @@ public class Identification implements Visitor {
             //Need to update the references' declarations
             ref.id.dec = member;
             ref.referenceDeclaration = ref.id.dec; // Have it for now to reset the referenceDecl but check later
-//            if(ref.referenceDeclaration instanceof MethodDecl && ref.id != null) {
-//                er.reportError("Cant have left hand side of qualref as a method");
-//                throw new Error();
-//            }
+            if(ref.referenceDeclaration instanceof MethodDecl && ref.id != null) {
+                er.reportError("Cant have left hand side of qualref as a method");
+                throw new Error();
+            }
 
         } else if(theContext instanceof MemberDecl) {
             MemberDecl contextMember = (MemberDecl) theContext;
@@ -442,10 +442,10 @@ public class Identification implements Visitor {
                 ref.id.dec = member;
                 ref.referenceDeclaration = ref.id.dec;
             }
-//            if(ref.referenceDeclaration instanceof MethodDecl && ref.id != null) {
-//                er.reportError("Cant have left hand side of qualref as a method");
-//                throw new Error();
-//            }
+            if(ref.referenceDeclaration instanceof MethodDecl && ref.id != null) {
+                er.reportError("Cant have left hand side of qualref as a method");
+                throw new Error();
+            }
 
         } else if(theContext instanceof LocalDecl) {
             LocalDecl contextLocal = (LocalDecl) theContext;
