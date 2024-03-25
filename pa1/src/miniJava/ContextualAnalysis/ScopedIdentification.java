@@ -7,14 +7,17 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Stack;
 import miniJava.ContextualAnalysis.*;
+import miniJava.ErrorReporter;
 
 public class ScopedIdentification {
 
     public Stack<IDTable> IDTables;
     public static int currentLevel = -1;
     public IDTable currentTab;
+    public ErrorReporter eReporter;
 
-    public ScopedIdentification() {
+    public ScopedIdentification(ErrorReporter report) {
+        this.eReporter = report;
         this.IDTables = new Stack<>();
     }
 
@@ -47,10 +50,18 @@ public class ScopedIdentification {
     public void addDeclaration(String a, Declaration d, Declaration contextDecl) {
         //Check if Declaration is a MemberDecl, if so, we can use cD. Else, disregard it
         if(d instanceof ClassDecl) { //Know this is at level 0.
+            if(d.name.equals("String") || d.name.equals("PrintStream") || d.name.equals("System")) {
+                if(this.currentTab.level == 1) {
+                    eReporter.reportError("Class already declared");
+                    throw new IdentificationError();
+                }
+            }
             if(this.currentTab.level != 0) {
+                eReporter.reportError("Not on level 0");
                 throw new IdentificationError();
             } else {
                 if(this.currentTab.theTable.containsKey(a)) {
+                    eReporter.reportError("Class already declared");
                     throw new IdentificationError();
                 }
                 this.currentTab.updateTable(a, d); //Adds a classDecl
@@ -60,12 +71,14 @@ public class ScopedIdentification {
                 for(IDTable t: IDTables) {
                     if(t.level == 1) { //Checks only IDTable 1
                         if(t.theTable.containsKey(a)) { //Checks if this table has the element or not
+                            eReporter.reportError("Member already declared");
                             throw new IdentificationError(); //Make this an identification error
                         }
                     }
                 }
                 this.currentTab.updateTableOne(a, d, (ClassDecl)contextDecl); //Adds a Field or MethodDecl with parent Class
             } else {
+                eReporter.reportError("No context provided");
                 throw new IdentificationError(); //No context given
             }
         } else {
@@ -76,6 +89,7 @@ public class ScopedIdentification {
                 if(tab.level >= newTabScope) { //Iterate through tables with its scope level or higher
                     if(tab.theTable.containsKey(a)) {
                         //System.out.println(tab.theTable);
+                        eReporter.reportError("Local Declaration already declared");
                         throw new IdentificationError(); //Make this an identification error
                     }
                 }
@@ -96,9 +110,11 @@ public class ScopedIdentification {
         }
 
         if(decl == null) {
+            eReporter.reportError("Declaration does not exist");
             throw new IdentificationError();
         } else if(methodContext instanceof ClassDecl) {
             if(!(decl instanceof ClassDecl)) {
+                eReporter.reportError("Method doesn't come from a class");
                 throw new IdentificationError();
             }
         } else if(methodContext instanceof MethodDecl) {
@@ -106,6 +122,7 @@ public class ScopedIdentification {
             if(mContext != null) {
                 if(mContext.isPrivate && decl instanceof MemberDecl) {
                     if(!((MemberDecl) decl).isStatic) { //If our decl is not static, we can't use it in our static method
+                        eReporter.reportError("Cannot access this");
                         throw new IdentificationError();
                     }
                 }

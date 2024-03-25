@@ -20,7 +20,7 @@ public class Identification implements Visitor {
     //Could pass in an argument into visitMethodDecl taking in a classDecl
     public Identification(Package tree, ErrorReporter r) {
         this.er = r;
-        this.si = new ScopedIdentification(); //Maybe have to pass in the errorReporter
+        this.si = new ScopedIdentification(this.er); //Maybe have to pass in the errorReporter
         pack = tree;
 
 
@@ -339,6 +339,7 @@ public class Identification implements Visitor {
     @Override
     public Object visitQRef(QualRef ref, Object arg) {
         ref.ref.visit(this, (MethodDecl)arg); //Will continue to visit QualRefs until It ends in an identifier
+        System.out.println(ref.ref.referenceDeclaration.name);
         if(ref.ref.referenceDeclaration == null) {
             System.out.println("what");
             er.reportError("No reference declaration error");
@@ -392,6 +393,10 @@ public class Identification implements Visitor {
             //Need to update the references' declarations
             ref.id.dec = member;
             ref.referenceDeclaration = ref.id.dec; // Have it for now to reset the referenceDecl but check later
+            if(ref.referenceDeclaration instanceof MethodDecl && ref.id != null) {
+                er.reportError("Cant have left hand side of qualref as a method");
+                throw new Error();
+            }
 
         } else if(theContext instanceof MemberDecl) {
             MemberDecl contextMember = (MemberDecl) theContext;
@@ -437,6 +442,11 @@ public class Identification implements Visitor {
                 ref.id.dec = member;
                 ref.referenceDeclaration = ref.id.dec;
             }
+            if(ref.referenceDeclaration instanceof MethodDecl && ref.id != null) {
+                er.reportError("Cant have left hand side of qualref as a method");
+                throw new Error();
+            }
+
         } else if(theContext instanceof LocalDecl) {
             LocalDecl contextLocal = (LocalDecl) theContext;
             if(!(contextLocal.type.typeKind == TypeKind.CLASS)) { //The context of our member has to be of type Class
@@ -480,6 +490,10 @@ public class Identification implements Visitor {
 //                } //Might not need this
                 ref.id.dec = member;
                 ref.referenceDeclaration = ref.id.dec;
+            }
+            if(ref.referenceDeclaration instanceof MethodDecl && ref.id != null) {
+                er.reportError("Cant have left hand side of qualref as a method");
+                throw new Error();
             }
 
         }
