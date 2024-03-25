@@ -89,7 +89,7 @@ public class ScopedIdentification {
     public Declaration findDeclaration(String a, Declaration methodContext) {
 
         Declaration decl = null;
-        for(int i = IDTables.size() - 1; i > 0; i--) {
+        for(int i = IDTables.size() - 1; i >= 0; i--) {
             if(IDTables.get(i).theTable.containsKey(a)) {
                 decl = IDTables.get(i).theTable.get(a);
             }

@@ -52,10 +52,10 @@ public class TypeChecking implements Visitor<Object, TypeDenoter> {
     @Override
     public TypeDenoter visitMethodDecl(MethodDecl md, Object arg) {
         for(ParameterDecl pd: md.parameterDeclList) {
-            pd.visit(this, null);
+            pd.visit(this, md);
         }
         for(Statement s : md.statementList) {
-            s.visit(this, null);
+            s.visit(this, md);
         }
         return md.type;
     }

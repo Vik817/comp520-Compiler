@@ -135,7 +135,7 @@ public class Identification implements Visitor {
 
     @Override
     public Object visitParameterDecl(ParameterDecl pd, Object arg) {
-        pd.type.visit(this, (MethodDecl)arg);
+        pd.type.visit(this, null);
         si.addDeclaration(pd.name, pd, (MethodDecl)arg); //Gives the parameterDecl some context of which method it is in
         return null;
     }
@@ -160,7 +160,7 @@ public class Identification implements Visitor {
 
     @Override
     public Object visitClassType(ClassType type, Object arg) {
-        si.findDeclaration(type.className.spelling, ((MethodDecl)arg).classContext);
+        si.findDeclaration(type.className.spelling, (MethodDecl)arg);
         return null;
     }
 
