@@ -75,7 +75,7 @@ public class ScopedIdentification {
             for(IDTable tab: IDTables) { //For each table in IDTables
                 if(tab.level >= newTabScope) { //Iterate through tables with its scope level or higher
                     if(tab.theTable.containsKey(a)) {
-                        System.out.println(tab.theTable);
+                        //System.out.println(tab.theTable);
                         throw new IdentificationError(); //Make this an identification error
                     }
                 }

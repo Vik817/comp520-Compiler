@@ -109,15 +109,29 @@ public class TypeChecking implements Visitor<Object, TypeDenoter> {
 
     @Override
     public TypeDenoter visitAssignStmt(AssignStmt stmt, Object arg) {
+
         TypeDenoter currTypeDenoter = stmt.ref.referenceDeclaration.type;
         if(currTypeDenoter.typeKind == TypeKind.CLASS || currTypeDenoter instanceof BaseType) {
-            typeComparator((TypeDenoter)stmt.ref.visit(this, null), (TypeDenoter)stmt.val.visit(this, null));
+            TypeDenoter t = typeComparator((TypeDenoter)stmt.ref.visit(this, null), (TypeDenoter)stmt.val.visit(this, null));
+            if(t == null) {
+                reportTypeError("Assigning reference an invalid type");
+            }
         }
         return null;
     }
 
     @Override
     public TypeDenoter visitIxAssignStmt(IxAssignStmt stmt, Object arg) {
+        if(stmt.ref.visit(this, null) instanceof ArrayType) {
+            //check if the expression is an integer
+            if (typeComparator(stmt.ix.visit(this, null), new BaseType(TypeKind.INT, null)) != null) {
+                return null;
+            } else {
+                reportTypeError("Invalid expression type in IxAssigning");
+            }
+        } else {
+            reportTypeError("Invalid expression type in IxAssigning");
+        }
         return null;
     }
 
@@ -321,8 +335,7 @@ public class TypeChecking implements Visitor<Object, TypeDenoter> {
     public TypeDenoter visitLiteralExpr(LiteralExpr expr, Object arg) {
         //Could be IntLiteral or BooleanLiteral
         //Need to visit to see
-        expr.lit.visit(this, null);
-        return null;
+        return expr.lit.visit(this, null);
     }
 
     @Override
@@ -381,6 +394,13 @@ public class TypeChecking implements Visitor<Object, TypeDenoter> {
 
     private TypeDenoter typeComparator(TypeDenoter a, TypeDenoter b) {
         if(a.typeKind.equals(b.typeKind)) {
+            if(a instanceof ClassType && b instanceof ClassType) {
+                if(((ClassType) a).className.spelling.equals(((ClassType) b).className.spelling)) {
+                    return a;
+                } else {
+                    return null;
+                }
+            }
             return a;
         } else {
             return null;

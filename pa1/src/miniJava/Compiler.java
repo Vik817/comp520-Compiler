@@ -31,19 +31,24 @@ public class Compiler {
                     //ASTDisplay display = new ASTDisplay();
                     //display.showTree(p);
                     Identification id = new Identification(p, reporter);
-                    id.startIdentifying();
-                    if (reporter.hasErrors()) {
-                        System.out.println("Error");
-                        reporter.outputErrors();
-                    } else {
-                        TypeChecking tC = new TypeChecking(p, reporter);
-                        tC.startTypeChecking();
+                    try {
+                        id.startIdentifying();
                         if (reporter.hasErrors()) {
                             System.out.println("Error");
                             reporter.outputErrors();
                         } else {
-                            System.out.println("Success");
+                            TypeChecking tC = new TypeChecking(p, reporter);
+                            tC.startTypeChecking();
+                            if (reporter.hasErrors()) {
+                                System.out.println("Error");
+                                reporter.outputErrors();
+                            } else {
+                                System.out.println("Success");
+                            }
                         }
+                    } catch (Error e) {
+                        System.out.println("Error");
+                        reporter.outputErrors();
                     }
                 }
             } catch (FileNotFoundException e) {
