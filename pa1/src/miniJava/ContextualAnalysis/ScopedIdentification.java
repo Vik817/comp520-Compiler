@@ -86,27 +86,34 @@ public class ScopedIdentification {
 
     }
 
-    public Declaration findDeclaration(String a, MethodDecl methodContext) {
+    public Declaration findDeclaration(String a, Declaration methodContext) {
 
         Declaration decl = null;
-        for (IDTable table: IDTables) {
-            if(table.theTable.containsKey(a)) {
-                decl = table.theTable.get(a);
+        for(int i = IDTables.size() - 1; i > 0; i--) {
+            if(IDTables.get(i).theTable.containsKey(a)) {
+                decl = IDTables.get(i).theTable.get(a);
             }
         }
 
         if(decl == null) {
             throw new IdentificationError();
-        }
-        //Need to check the case where our current method is static
-        //If our current method is static, it can only access stuff that is also static. Check if Decl is a MemberDecl and static
-        else if(methodContext != null) {
-            if(methodContext.isPrivate && decl instanceof MemberDecl) {
-                if(!((MemberDecl) decl).isStatic) { //If our decl is not static, we can't use it in our static method
-                    throw new IdentificationError();
+        } else if(methodContext instanceof ClassDecl) {
+            if(!(decl instanceof ClassDecl)) {
+                throw new IdentificationError();
+            }
+        } else if(methodContext instanceof MethodDecl) {
+            MethodDecl mContext = (MethodDecl) methodContext;
+            if(mContext != null) {
+                if(mContext.isPrivate && decl instanceof MemberDecl) {
+                    if(!((MemberDecl) decl).isStatic) { //If our decl is not static, we can't use it in our static method
+                        throw new IdentificationError();
+                    }
                 }
             }
         }
+        //Need to check the case where our current method is static
+        //If our current method is static, it can only access stuff that is also static. Check if Decl is a MemberDecl and static
+
         return decl;
 
 //        int closestScope = scopeContext;
