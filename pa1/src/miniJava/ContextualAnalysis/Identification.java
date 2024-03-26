@@ -433,6 +433,9 @@ public class Identification implements Visitor {
                 er.reportError("Reference not found");
                 throw new Error();
             }
+            //Need to check if the member we found is private
+            //If it is, we use the method decl that was passed in and see if its class as well as the member's
+            //class are the same. If they aren't, we cannot access this member.
             if(member.isPrivate && !(((MethodDecl)arg).classContext.name.equals(contextClass.name))) {
                 er.reportError("Cannot access private member");
                 throw new Error();
@@ -478,16 +481,12 @@ public class Identification implements Visitor {
                     }
                     break;
                 }
+                //This checks if the current QRef's left reference is a method. If so,
+                //there is an issue as we can't have methodDecl.a qref
                 if(ref.ref.referenceDeclaration instanceof MethodDecl) {
                     er.reportError("Left of QRef is a method");
                     throw new Error();
                 }
-//                if(ref.ref.referenceDeclaration != null) {
-//                    if(checkIfMethod(ref.ref.referenceDeclaration) == true) {
-//                        er.reportError("Left of QRef is a method");
-//                        throw new Error();
-//                    }
-//                }
 
                 if(member == null) {
                     er.reportError("Reference not found");
@@ -495,11 +494,6 @@ public class Identification implements Visitor {
                 if(member.isPrivate && !(((MethodDecl)arg).classContext.name.equals(classOrigin.name))) {
                     er.reportError("Cannot access private member");
                 }
-//                if(((MethodDecl)arg).isStatic) {
-//                    if(!member.isStatic) {
-//                        er.reportError("Accessing nonstatic member from a static class");
-//                    }
-//                } //Might not need this
                 ref.id.dec = member;
                 ref.referenceDeclaration = ref.id.dec;
             }
@@ -544,11 +538,6 @@ public class Identification implements Visitor {
                 if(member.isPrivate && !(((MethodDecl)arg).classContext.name.equals(classOrigin.name))) {
                     er.reportError("Cannot access private member");
                 }
-//                if(((MethodDecl)arg).isStatic) {
-//                    if(!member.isStatic) {
-//                        er.reportError("Accessing nonstatic member from a static class");
-//                    }
-//                } //Might not need this
                 ref.id.dec = member;
                 ref.referenceDeclaration = ref.id.dec;
             }

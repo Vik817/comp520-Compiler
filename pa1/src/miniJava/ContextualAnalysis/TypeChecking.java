@@ -69,10 +69,12 @@ public class TypeChecking implements Visitor<Object, TypeDenoter> {
     @Override
     public TypeDenoter visitVarDecl(VarDecl decl, Object arg) {
         //System.out.println(decl.name);
+        //Checks the String issue
         if(decl.name.equals("String")) {
-            return new BaseType(TypeKind.UNSUPPORTED, null);
+            if(decl.type instanceof ClassType) {
+                return new BaseType(TypeKind.UNSUPPORTED, null);
+            }
         }
-        //Might need to check the String issue
         return decl.type;
     }
 
@@ -88,7 +90,6 @@ public class TypeChecking implements Visitor<Object, TypeDenoter> {
 
     @Override
     public TypeDenoter visitArrayType(ArrayType type, Object arg) {
-        //type.eltType.visit(this, null);
         return null;
     }
 
@@ -115,7 +116,8 @@ public class TypeChecking implements Visitor<Object, TypeDenoter> {
     public TypeDenoter visitAssignStmt(AssignStmt stmt, Object arg) {
 
         TypeDenoter currTypeDenoter = stmt.ref.referenceDeclaration.type;
-        if(currTypeDenoter.typeKind == TypeKind.CLASS || currTypeDenoter instanceof BaseType) {
+        if(currTypeDenoter.typeKind == TypeKind.CLASS || currTypeDenoter instanceof BaseType ||
+                currTypeDenoter instanceof ArrayType) {
             TypeDenoter t = typeComparator((TypeDenoter)stmt.ref.visit(this, null), (TypeDenoter)stmt.val.visit(this, null));
             if(t == null) {
                 reportTypeError("Assigning reference an invalid type");
