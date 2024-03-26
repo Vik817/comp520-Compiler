@@ -86,7 +86,7 @@ public class ScopedIdentification {
             newTab.updateTable(a, d); //Creates a new IDTable we can run tests with to see if it alrdy exists at same or higher scope
             int newTabScope = newTab.level;
             for(int i = IDTables.size() - 1; i >= 0; i--) {
-                if(IDTables.get(i).level >= newTabScope) {
+                if(IDTables.get(i).level >= 2) {
                     if(IDTables.get(i).theTable.containsKey(a)) {
                         eReporter.reportError("Local Declaration already declared");
                         throw new IdentificationError(); //Make this an identification error

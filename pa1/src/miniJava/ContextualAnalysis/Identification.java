@@ -162,7 +162,11 @@ public class Identification implements Visitor {
 
     @Override
     public Object visitClassType(ClassType type, Object arg) {
-        if(si.findDeclaration(type.className.spelling, (MethodDecl)arg) instanceof ClassDecl) {
+        //Only look for it in a class context
+        //Checking if this is even a class
+        //Need to check both the import levels and the actual class names
+        if(si.IDTables.get(0).theTable.get(type.className.spelling) instanceof ClassDecl ||
+                si.IDTables.get(1).theTable.get(type.className.spelling) instanceof ClassDecl) {
             return null;
         } else {
             er.reportError("Classtype error");
