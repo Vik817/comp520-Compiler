@@ -85,15 +85,24 @@ public class ScopedIdentification {
             IDTable newTab = new IDTable();
             newTab.updateTable(a, d); //Creates a new IDTable we can run tests with to see if it alrdy exists at same or higher scope
             int newTabScope = newTab.level;
-            for(IDTable tab: IDTables) { //For each table in IDTables
-                if(tab.level >= newTabScope) { //Iterate through tables with its scope level or higher
-                    if(tab.theTable.containsKey(a)) {
-                        //System.out.println(tab.theTable);
+            for(int i = IDTables.size() - 1; i >= 0; i--) {
+                if(IDTables.get(i).level >= newTabScope) {
+                    if(IDTables.get(i).theTable.containsKey(a)) {
                         eReporter.reportError("Local Declaration already declared");
                         throw new IdentificationError(); //Make this an identification error
                     }
                 }
-            } //If it makes it through the for loop, then we can add it
+            }
+
+//            for(IDTable tab: IDTables) { //For each table in IDTables
+//                if(tab.level >= newTabScope) { //Iterate through tables with its scope level or higher
+//                    if(tab.theTable.containsKey(a)) {
+//                        //System.out.println(tab.theTable);
+//                        eReporter.reportError("Local Declaration already declared");
+//                        throw new IdentificationError(); //Make this an identification error
+//                    }
+//                }
+//            } //If it makes it through the for loop, then we can add it
             this.currentTab.updateTableTwoPlus(a, d, (MethodDecl)contextDecl);
         }
 
@@ -106,6 +115,7 @@ public class ScopedIdentification {
         for(int i = IDTables.size() - 1; i >= 0; i--) {
             if(IDTables.get(i).theTable.containsKey(a)) {
                 decl = IDTables.get(i).theTable.get(a);
+                break;
             }
         }
 
