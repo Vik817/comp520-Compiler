@@ -398,7 +398,6 @@ public class Identification implements Visitor {
             throw new Error();
         }
         Declaration theContext = ref.ref.referenceDeclaration; //Provide the current context of the referencce
-
         //Now need to check where this context is
         if(theContext instanceof ClassDecl) { //The thing using the context is a MemberDecl
             //Now we need to find where the id was declared in our reference's context
@@ -425,12 +424,16 @@ public class Identification implements Visitor {
                 }
                 break;
             }
+            if(ref.ref.referenceDeclaration instanceof MethodDecl) {
+                er.reportError("Left of QRef is a method");
+                throw new Error();
+            }
 
             if(member == null) {
                 er.reportError("Reference not found");
                 throw new Error();
             }
-            if(member.isPrivate) {
+            if(member.isPrivate && !(((MethodDecl)arg).classContext.name.equals(contextClass.name))) {
                 er.reportError("Cannot access private member");
                 throw new Error();
             }
@@ -445,10 +448,6 @@ public class Identification implements Visitor {
             //Need to update the references' declarations
             ref.id.dec = member;
             ref.referenceDeclaration = ref.id.dec; // Have it for now to reset the referenceDecl but check later
-            if(ref.referenceDeclaration instanceof MethodDecl && ref.id != null) {
-                er.reportError("Cant have left hand side of qualref as a method");
-                throw new Error();
-            }
 
         } else if(theContext instanceof MemberDecl) {
             MemberDecl contextMember = (MemberDecl) theContext;
@@ -479,11 +478,21 @@ public class Identification implements Visitor {
                     }
                     break;
                 }
+                if(ref.ref.referenceDeclaration instanceof MethodDecl) {
+                    er.reportError("Left of QRef is a method");
+                    throw new Error();
+                }
+//                if(ref.ref.referenceDeclaration != null) {
+//                    if(checkIfMethod(ref.ref.referenceDeclaration) == true) {
+//                        er.reportError("Left of QRef is a method");
+//                        throw new Error();
+//                    }
+//                }
 
                 if(member == null) {
                     er.reportError("Reference not found");
                 }
-                if(member.isPrivate) {
+                if(member.isPrivate && !(((MethodDecl)arg).classContext.name.equals(classOrigin.name))) {
                     er.reportError("Cannot access private member");
                 }
 //                if(((MethodDecl)arg).isStatic) {
@@ -493,10 +502,6 @@ public class Identification implements Visitor {
 //                } //Might not need this
                 ref.id.dec = member;
                 ref.referenceDeclaration = ref.id.dec;
-            }
-            if(ref.referenceDeclaration instanceof MethodDecl && ref.id != null) {
-                er.reportError("Cant have left hand side of qualref as a method");
-                throw new Error();
             }
 
         } else if(theContext instanceof LocalDecl) {
@@ -528,11 +533,15 @@ public class Identification implements Visitor {
                     }
                     break;
                 }
+                if(ref.ref.referenceDeclaration instanceof MethodDecl) {
+                    er.reportError("Left of QRef is a method");
+                    throw new Error();
+                }
 
                 if(member == null) {
                     er.reportError("Reference not found");
                 }
-                if(member.isPrivate) {
+                if(member.isPrivate && !(((MethodDecl)arg).classContext.name.equals(classOrigin.name))) {
                     er.reportError("Cannot access private member");
                 }
 //                if(((MethodDecl)arg).isStatic) {
@@ -582,4 +591,5 @@ public class Identification implements Visitor {
     public Object visitNullLiteral(NullLiteral nullLit, Object arg) {
         return null;
     }
+    
 }
