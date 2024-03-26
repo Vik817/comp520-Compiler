@@ -196,14 +196,22 @@ public class Identification implements Visitor {
     @Override
     public Object visitVardeclStmt(VarDeclStmt stmt, Object arg) {
         stmt.varDecl.visit(this, (MethodDecl)arg);
-        stmt.initExp.visit(this, (MethodDecl)arg);
+        if(stmt.initExp.visit(this, (MethodDecl)arg) instanceof ClassDecl) {
+            er.reportError("Can't assign a class to a variable");
+            throw new Error();
+        }
         return null;
     }
 
     @Override
     public Object visitAssignStmt(AssignStmt stmt, Object arg) {
         stmt.ref.visit(this, (MethodDecl)arg);
-        stmt.val.visit(this, (MethodDecl)arg);
+        Object d = stmt.val.visit(this, (MethodDecl)arg);
+        if(d instanceof MethodDecl ||
+                d instanceof ClassDecl) {
+            er.reportError("Cannot assign to class or method");
+            throw new Error();
+        }
         return null;
     }
 
@@ -272,8 +280,12 @@ public class Identification implements Visitor {
 
     @Override
     public Object visitRefExpr(RefExpr expr, Object arg) {
-        expr.ref.visit(this, (MethodDecl)arg);
-        return null;
+        Object a = expr.ref.visit(this, (MethodDecl)arg);
+        if(expr.ref.referenceDeclaration instanceof MethodDecl) {
+            er.reportError("Can't use method here");
+            throw new Error();
+        }
+        return a;
     }
 
     @Override
@@ -333,7 +345,43 @@ public class Identification implements Visitor {
     public Object visitIdRef(IdRef ref, Object arg) {
         Declaration idandRefDecl = (Declaration)ref.id.visit(this, (MethodDecl)arg);
         ref.referenceDeclaration = idandRefDecl; //Set a reference Declaration to use as context for our QualRef
-        return null;
+        if(ref.referenceDeclaration instanceof ClassDecl) {
+            //Now we need to find where the id was declared in our reference's context
+            //Could be either a Field or Method Decl
+            //Or it could just be the class itself, which if it is, we just end up returning the idandRefDecl
+            if(ref.referenceDeclaration.name.equals(ref.id.spelling)) {
+                ClassDecl contextClass = (ClassDecl) ref.referenceDeclaration;
+                MemberDecl member = null;
+                boolean declarationFound = false;
+                while(!declarationFound) {
+                    for(FieldDecl f: contextClass.fieldDeclList) {
+                        if(ref.id.spelling.equals(f.name)) {
+                            member = f;
+                            declarationFound = true;
+                            break;
+                        }
+                    }
+                    if(declarationFound) {
+                        break;
+                    }
+                    for(MethodDecl m: contextClass.methodDeclList) {
+                        if(ref.id.spelling.equals(m.name)) {
+                            member = m;
+                            break;
+                        }
+                    }
+                    break;
+                }
+                if(member != null) {
+                    return member;
+                }
+            }
+
+        }
+        //Decided to return theidandRefDecl
+        //Necessary in order to figure out if, in one of our VarDeclStmts, if we are assinging something
+        //to just a class, which wouldn't work
+        return idandRefDecl;
     }
 
     @Override
