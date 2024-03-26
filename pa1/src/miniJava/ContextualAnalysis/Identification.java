@@ -552,10 +552,6 @@ public class Identification implements Visitor {
                 ref.id.dec = member;
                 ref.referenceDeclaration = ref.id.dec;
             }
-            if(ref.referenceDeclaration instanceof MethodDecl && ref.id != null) {
-                er.reportError("Cant have left hand side of qualref as a method");
-                throw new Error();
-            }
 
         }
         return null;
@@ -591,5 +587,5 @@ public class Identification implements Visitor {
     public Object visitNullLiteral(NullLiteral nullLit, Object arg) {
         return null;
     }
-    
+
 }
