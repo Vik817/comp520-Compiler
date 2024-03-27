@@ -288,9 +288,9 @@ public class TypeChecking implements Visitor<Object, TypeDenoter> {
         } else if(op.spelling.equals("!=")) {
             TypeDenoter comparison = typeComparator(leftExpr, rightExpr);
             if(comparison == null) { //They aren't equal
-                return new BaseType(TypeKind.BOOLEAN, null);
-            } else {
                 return new BaseType(TypeKind.ERROR, null);
+            } else {
+                return new BaseType(TypeKind.BOOLEAN, null);
             }
         }
         return new BaseType(TypeKind.ERROR, null);
