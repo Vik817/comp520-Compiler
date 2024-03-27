@@ -295,6 +295,11 @@ public class Identification implements Visitor {
     @Override
     public Object visitIxExpr(IxExpr expr, Object arg) {
         expr.ref.visit(this, (MethodDecl)arg);
+        if(!(expr.ref.referenceDeclaration.type instanceof ArrayType)) {
+            er.reportError("Expression's reference is not of array type");
+            throw new Error();
+        }
+        //Make sure reference's typeDenoter is ArrayType
         expr.ixExpr.visit(this, (MethodDecl)arg);
         return null;
     }
@@ -341,6 +346,9 @@ public class Identification implements Visitor {
         }
         //"This" is declared in the context of the class it is not, not the method. So need the parent class of the method
         ref.referenceDeclaration = ((MethodDecl)arg).classContext; //Needed access to the current class
+        //Set the type of the referenceDecl to a ClassType
+        //Little weird way of fixing this but hopefully it doesn't breka anything
+        ref.referenceDeclaration.type = new ClassType(new Identifier(new Token(TokenType.CLASS, ((MethodDecl)arg).classContext.name)), null);
         //ClassDecl methodsClass = this.si.findDeclaration(((MethodDecl)arg).name, null);
         return null;
     }

@@ -237,65 +237,60 @@ public class TypeChecking implements Visitor<Object, TypeDenoter> {
         Operator op = expr.operator;
         //Need to check every operation besides unary and see if it returned the right type
         //Could return the value of the operation
-        if(op.spelling.equals("&&") || op.spelling.equals("||")) {
+        if (op.spelling.equals("&&") || op.spelling.equals("||")) {
             TypeDenoter a = typeComparator(new BaseType(TypeKind.BOOLEAN, null), leftExpr);
-            if(a == null) {
+            if (a == null) {
                 reportTypeError("Left expression not a boolean in a boolean operation");
                 return new BaseType(TypeKind.ERROR, null);
             }
             TypeDenoter b = typeComparator(new BaseType(TypeKind.BOOLEAN, null), rightExpr);
-            if(b == null) {
+            if (b == null) {
+                System.out.println(expr.right);
                 reportTypeError("Right expression not a boolean in a boolean operation");
                 return new BaseType(TypeKind.ERROR, null);
             }
             //If neither is null, I can return a BOOLEAN
             return new BaseType(TypeKind.BOOLEAN, null);
-        } else if(op.spelling.equals(">") || op.spelling.equals("<") ||
+        } else if (op.spelling.equals(">") || op.spelling.equals("<") ||
                 op.spelling.equals(">=") || op.spelling.equals("<=")) {
             TypeDenoter a = typeComparator(new BaseType(TypeKind.INT, null), leftExpr);
-            if(a == null) {
+            if (a == null) {
                 reportTypeError("Left expression not an int in an int operation");
                 return new BaseType(TypeKind.ERROR, null);
             }
             TypeDenoter b = typeComparator(new BaseType(TypeKind.INT, null), rightExpr);
-            if(b == null) {
+            if (b == null) {
                 reportTypeError("Right expression not an int in an int operation");
                 return new BaseType(TypeKind.ERROR, null);
             }
             //If neither is null, I can return a BOOLEAN
             return new BaseType(TypeKind.BOOLEAN, null);
-        } else if(op.spelling.equals("+") || op.spelling.equals("-") || op.spelling.equals("*") || op.spelling.equals("/")) {
+        } else if (op.spelling.equals("+") || op.spelling.equals("-") || op.spelling.equals("*") || op.spelling.equals("/")) {
             TypeDenoter a = typeComparator(new BaseType(TypeKind.INT, null), leftExpr);
-            if(a == null) {
+            if (a == null) {
                 reportTypeError("Left expression not an int in an int operation");
                 return new BaseType(TypeKind.ERROR, null);
             }
             TypeDenoter b = typeComparator(new BaseType(TypeKind.INT, null), rightExpr);
-            if(b == null) {
+            if (b == null) {
                 reportTypeError("Right expression not an int in an int operation");
                 return new BaseType(TypeKind.ERROR, null);
             }
             //If neither is null, I can return a BOOLEAN
             return new BaseType(TypeKind.INT, null);
-        } else if(op.spelling.equals("==") || op.spelling.equals("!=")) {
+        } else if(op.spelling.equals("==")) {
             TypeDenoter comparison = typeComparator(leftExpr, rightExpr);
-            if(comparison == null) { //They aren't equal
-                //First check if i can even compare the types
+            if(comparison == null) { //Not equal, so return an error
                 return new BaseType(TypeKind.ERROR, null);
             } else {
-                return new BaseType(comparison.typeKind, null);
-//                if(op.spelling.equals("!=")) { //If they weren't supposed to be equal
-//                    return new BaseType(TypeKind.BOOLEAN, null);
-//                } else {
-//                    reportTypeError("Expressions should be equal but aren't");
-//                    return new BaseType(TypeKind.ERROR, null);
-//                }
-//                if(op.spelling.equals("==")) { //If they were supposed to be equal
-//                    return new BaseType(TypeKind.BOOLEAN, null);
-//                } else {
-//                    reportTypeError("Expressions shouldn't be equal but are");
-//                    return new BaseType(TypeKind.ERROR, null);
-//                }
+                return new BaseType(TypeKind.BOOLEAN, null);
+            }
+        } else if(op.spelling.equals("!=")) {
+            TypeDenoter comparison = typeComparator(leftExpr, rightExpr);
+            if(comparison == null) { //They aren't equal
+                return new BaseType(TypeKind.BOOLEAN, null);
+            } else {
+                return new BaseType(TypeKind.ERROR, null);
             }
         }
         return new BaseType(TypeKind.ERROR, null);
@@ -313,7 +308,9 @@ public class TypeChecking implements Visitor<Object, TypeDenoter> {
         if(expr.ref.visit(this, null) instanceof ArrayType) {
             //check if the expression is an integer
             if (typeComparator(expr.ixExpr.visit(this, null), new BaseType(TypeKind.INT, null)) != null) {
-                return new ArrayType(expr.ixExpr.visit(this, null), null);
+                //Returns the type of the array's eltType, the type of the array
+                return new BaseType(((ArrayType)expr.ref.visit(this, null)).eltType.typeKind, null);
+                //return new ArrayType(expr.ixExpr.visit(this, null), null);
             } else {
                 reportTypeError("Invalid expression type in IxExpression");
                 return new BaseType(TypeKind.ERROR, null);
