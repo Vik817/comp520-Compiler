@@ -7,14 +7,12 @@ import miniJava.ErrorReporter;
 import miniJava.SyntacticAnalyzer.Token;
 import miniJava.SyntacticAnalyzer.TokenType;
 
-import java.lang.reflect.Member;
-import java.lang.reflect.Method;
-
 public class Identification implements Visitor {
 
     private ScopedIdentification si;
     private ErrorReporter er;
     Package pack;
+    String currentVar;
 
     //Need to implement context. How will a MethodDecl know which class it came from?
     //Could pass in an argument into visitMethodDecl taking in a classDecl
@@ -200,6 +198,7 @@ public class Identification implements Visitor {
     @Override
     public Object visitVardeclStmt(VarDeclStmt stmt, Object arg) {
         stmt.varDecl.visit(this, (MethodDecl)arg);
+        currentVar = stmt.varDecl.name;
         if(stmt.initExp.visit(this, (MethodDecl)arg) instanceof ClassDecl) {
             er.reportError("Can't assign a class to a variable");
             throw new Error();
@@ -248,8 +247,16 @@ public class Identification implements Visitor {
     public Object visitIfStmt(IfStmt stmt, Object arg) {
         stmt.cond.visit(this, (MethodDecl)arg);
         stmt.thenStmt.visit(this, (MethodDecl)arg);
+        if(stmt.thenStmt instanceof VarDeclStmt) {
+            er.reportError("Can't declare a variable in its own scope");
+            throw new Error();
+        }
         if(stmt.elseStmt != null) {
             stmt.elseStmt.visit(this, (MethodDecl)arg);
+            if(stmt.elseStmt instanceof VarDeclStmt) {
+                er.reportError("Can't declare a variable in its own scope");
+                throw new Error();
+            }
         }
         return null;
     }
@@ -258,6 +265,10 @@ public class Identification implements Visitor {
     public Object visitWhileStmt(WhileStmt stmt, Object arg) {
         stmt.cond.visit(this, (MethodDecl)arg);
         stmt.body.visit(this, (MethodDecl)arg);
+        if(stmt.body instanceof VarDeclStmt) {
+            er.reportError("Can't declare a variable in its own scope");
+            throw new Error();
+        }
         return null;
     }
 
@@ -356,6 +367,12 @@ public class Identification implements Visitor {
     @Override
     public Object visitIdRef(IdRef ref, Object arg) {
         Declaration idandRefDecl = (Declaration)ref.id.visit(this, (MethodDecl)arg);
+        //Eventually, VarDeclStmt will get to here, and if our IdRef's Identifier's spelling is the same
+        //as the current variable we are declaring in our varDeclStmt, throw an error
+        if(ref.id.spelling.equals(currentVar)) {
+            currentVar = null;
+            er.reportError("Using variable that is currently being declared");
+        }
         ref.referenceDeclaration = idandRefDecl; //Set a reference Declaration to use as context for our QualRef
         if(ref.referenceDeclaration instanceof ClassDecl) {
             //Now we need to find where the id was declared in our reference's context
