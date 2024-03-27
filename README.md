@@ -6,8 +6,8 @@ PA1: Done
 
 PA2: Done
 
-PA3: In progress
+PA3: Done
 
-PA4: Not started
+PA4: In progress
 
 PA5: Not started
