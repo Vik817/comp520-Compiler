@@ -198,11 +198,15 @@ public class Identification implements Visitor {
     @Override
     public Object visitVardeclStmt(VarDeclStmt stmt, Object arg) {
         stmt.varDecl.visit(this, (MethodDecl)arg);
+        //Set currentVariable in usage to the varDecl's name. Will check if the stmt ends up in an IDRef
+        //later, and if it does and the IdRef's identifier's name is the same, it is using
+        //this variable in the same line as its declaration
         currentVar = stmt.varDecl.name;
         if(stmt.initExp.visit(this, (MethodDecl)arg) instanceof ClassDecl) {
             er.reportError("Can't assign a class to a variable");
             throw new Error();
         }
+        currentVar = null;
         return null;
     }
 
@@ -370,7 +374,6 @@ public class Identification implements Visitor {
         //Eventually, VarDeclStmt will get to here, and if our IdRef's Identifier's spelling is the same
         //as the current variable we are declaring in our varDeclStmt, throw an error
         if(ref.id.spelling.equals(currentVar)) {
-            currentVar = null;
             er.reportError("Using variable that is currently being declared");
         }
         ref.referenceDeclaration = idandRefDecl; //Set a reference Declaration to use as context for our QualRef
