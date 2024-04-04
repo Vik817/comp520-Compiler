@@ -7,6 +7,9 @@ import miniJava.ErrorReporter;
 import miniJava.SyntacticAnalyzer.Token;
 import miniJava.SyntacticAnalyzer.TokenType;
 
+import java.lang.reflect.Member;
+import java.lang.reflect.Method;
+
 public class Identification implements Visitor {
 
     private ScopedIdentification si;
@@ -358,6 +361,7 @@ public class Identification implements Visitor {
         //Keyword "this" does not make sense in a static context
         if(((MethodDecl)arg).isStatic) {
             er.reportError("Using 'this' in a static context'");
+            throw new Error();
         }
         //"This" is declared in the context of the class it is not, not the method. So need the parent class of the method
         ref.referenceDeclaration = ((MethodDecl)arg).classContext; //Needed access to the current class
@@ -375,6 +379,7 @@ public class Identification implements Visitor {
         //as the current variable we are declaring in our varDeclStmt, throw an error
         if(ref.id.spelling.equals(currentVar)) {
             er.reportError("Using variable that is currently being declared");
+            throw new Error();
         }
         ref.referenceDeclaration = idandRefDecl; //Set a reference Declaration to use as context for our QualRef
         if(ref.referenceDeclaration instanceof ClassDecl) {
@@ -409,6 +414,14 @@ public class Identification implements Visitor {
                 }
             }
 
+        }
+        if(((MethodDecl)arg).isStatic) {
+            if(idandRefDecl instanceof MemberDecl) {
+                if(!((MemberDecl)idandRefDecl).isStatic) {
+                    er.reportError("Using non-static parameter in static context");
+                    throw new Error();
+                }
+            }
         }
         //Decided to return theidandRefDecl
         //Necessary in order to figure out if, in one of our VarDeclStmts, if we are assinging something
