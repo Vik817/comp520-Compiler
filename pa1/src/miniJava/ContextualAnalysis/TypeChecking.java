@@ -222,7 +222,7 @@ public class TypeChecking implements Visitor<Object, TypeDenoter> {
             if(t == null) {
                 reportTypeError("Integer negation did not return type integer");
             } else {
-                return new BaseType(TypeKind.BOOLEAN, null);
+                return new BaseType(TypeKind.INT, null);
             }
         } else {
             reportTypeError("Invalid operator for unary negation");
