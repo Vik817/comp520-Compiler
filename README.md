@@ -1,13 +1,22 @@
-# comp520-programming assignment
+# COMP520 Programming Assignment
 
-Progress so far:
+This is a Compiler (WIP) for the MiniJava language meant to take code written in 
+miniJava and compile it into byte code that targets x86/64 processors and
+the Linux operating system
 
-PA1: Done
+## Progress so far:
 
-PA2: Done
+### PA1: Done
+Syntactic analysis and Parser for a Context Free Grammar of MiniJava
 
-PA3: Done
+### PA2: Done
+AST generation and traversal
 
-PA4: In progress
+### PA3: Done
+Contextual analysis: Identification of variable declaration and type checking
 
-PA5: Not started
+### PA4: In progress
+Code generation
+
+### PA5: Not started
+Extra credit

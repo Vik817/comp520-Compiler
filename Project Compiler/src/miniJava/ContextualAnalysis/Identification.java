@@ -16,6 +16,7 @@ public class Identification implements Visitor {
     private ErrorReporter er;
     Package pack;
     String currentVar;
+    boolean hasRequiredMainMethod = false;
 
     //Need to implement context. How will a MethodDecl know which class it came from?
     //Could pass in an argument into visitMethodDecl taking in a classDecl
@@ -81,6 +82,10 @@ public class Identification implements Visitor {
         }
         si.closeScope();
         si.closeScope();
+        if(!hasRequiredMainMethod) {
+            er.reportError("Does not have a public static void main method");
+            throw new Error();
+        }
         return null;
     }
 
@@ -119,6 +124,22 @@ public class Identification implements Visitor {
 
     @Override
     public Object visitMethodDecl(MethodDecl md, Object arg) {
+
+
+        if(!md.isPrivate && md.isStatic && md.type.typeKind == TypeKind.VOID && md.name.equals("main")) {
+            if(md.parameterDeclList.size() == 1) { //Checks if it only has a one parameter which should be String[]
+                ParameterDecl currPD = md.parameterDeclList.get(0);
+                if(currPD.type instanceof ArrayType) {
+                    if(((ClassType) ((ArrayType)currPD.type).eltType).className.spelling.equals("String")) { //Checks if it is String
+                        hasRequiredMainMethod = true;
+                    }
+
+                }
+            }
+        }
+
+
+        Statement currStatement = null;
         if(arg != null) {
             md.classContext = (ClassDecl)arg;
         }
@@ -129,7 +150,14 @@ public class Identification implements Visitor {
         }
         si.openScope(); //Entering a statementList or Block Statement
         for (Statement s : md.statementList) {
+            currStatement = s;
             s.visit(this, md); //Added md as a parameter so LocalDecls can use it for context
+        }
+        if(md.type.typeKind != TypeKind.VOID) {
+            if(!(currStatement instanceof ReturnStmt)) {
+                er.reportError("Last statement in method does not return anything");
+                throw new Error();
+            }
         }
         si.closeScope();
         si.closeScope();
