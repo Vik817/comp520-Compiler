@@ -525,6 +525,7 @@ public class Identification implements Visitor {
             MemberDecl contextMember = (MemberDecl) theContext;
             if(!(contextMember.type.typeKind == TypeKind.CLASS)) { //The context of our member has to be of type Class
                 er.reportError("Accessing without use of a class");
+                throw new Error();
             } else {
                 //Need the class it is from in order to look for the declaration
                 ClassDecl classOrigin = (ClassDecl)si.findDeclaration(
@@ -559,9 +560,11 @@ public class Identification implements Visitor {
 
                 if(member == null) {
                     er.reportError("Reference not found");
+                    throw new Error();
                 }
                 if(member.isPrivate && !(((MethodDecl)arg).classContext.name.equals(classOrigin.name))) {
                     er.reportError("Cannot access private member");
+                    throw new Error();
                 }
                 ref.id.dec = member;
                 ref.referenceDeclaration = ref.id.dec;
@@ -571,6 +574,7 @@ public class Identification implements Visitor {
             LocalDecl contextLocal = (LocalDecl) theContext;
             if(!(contextLocal.type.typeKind == TypeKind.CLASS)) { //The context of our member has to be of type Class
                 er.reportError("Accessing without use of a class");
+                throw new Error();
             } else {
                 //Need the class it is from in order to look for the declaration
                 ClassDecl classOrigin = (ClassDecl)si.findDeclaration(
@@ -603,9 +607,11 @@ public class Identification implements Visitor {
 
                 if(member == null) {
                     er.reportError("Reference not found");
+                    throw new Error();
                 }
                 if(member.isPrivate && !(((MethodDecl)arg).classContext.name.equals(classOrigin.name))) {
                     er.reportError("Cannot access private member");
+                    throw new Error();
                 }
                 ref.id.dec = member;
                 ref.referenceDeclaration = ref.id.dec;

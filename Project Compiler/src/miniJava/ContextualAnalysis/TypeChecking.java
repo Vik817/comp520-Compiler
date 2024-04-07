@@ -358,7 +358,9 @@ public class TypeChecking implements Visitor<Object, TypeDenoter> {
 
     @Override
     public TypeDenoter visitNewArrayExpr(NewArrayExpr expr, Object arg) {
-        typeComparator(new BaseType(TypeKind.INT, null), expr.sizeExpr.visit(this, null));
+        if(typeComparator(new BaseType(TypeKind.INT, null), expr.sizeExpr.visit(this, null)) == null) {
+            reportTypeError("Size parameter is not an integer");
+        }
         ArrayType val = new ArrayType(expr.eltType, null);
         return val;
     }
