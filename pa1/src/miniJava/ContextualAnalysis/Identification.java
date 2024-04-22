@@ -82,10 +82,10 @@ public class Identification implements Visitor {
         }
         si.closeScope();
         si.closeScope();
-//        if(!hasRequiredMainMethod) {
-//            er.reportError("Does not have a public static void main method");
-//            throw new Error();
-//        }
+        if(!hasRequiredMainMethod) {
+            er.reportError("Does not have a public static void main method");
+            throw new Error();
+        }
         return null;
     }
 
