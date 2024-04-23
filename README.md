@@ -19,4 +19,4 @@ Contextual analysis: Identification of variable declaration and type checking
 Code generation
 
 ### PA5: Not started
-Extra credit
+Documentation and Extra Features
