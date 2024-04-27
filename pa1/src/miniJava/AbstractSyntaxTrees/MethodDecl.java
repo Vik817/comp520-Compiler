@@ -23,4 +23,6 @@ public class MethodDecl extends MemberDecl {
 	public StatementList statementList;
 
     public ClassDecl classContext;
+
+    public int runtimeAddress = -1;
 }

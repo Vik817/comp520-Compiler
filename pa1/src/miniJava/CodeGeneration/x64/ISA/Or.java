@@ -1,6 +1,6 @@
 package miniJava.CodeGeneration.x64.ISA;
 
-import miniJava.CodeGeneration.x64.ModRMSIB;
+import miniJava.CodeGeneration.x64.RS;
 
 public class Or extends SimpleMathInstruction {
 	@Override
@@ -8,11 +8,11 @@ public class Or extends SimpleMathInstruction {
 		return SimpleMathOp.OR;
 	}
 	
-	public Or(ModRMSIB modrmsib) {
+	public Or(RS modrmsib) {
 		super(modrmsib);
 	}
 
-	public Or(ModRMSIB modrmsib, int imm) {
+	public Or(RS modrmsib, int imm) {
 		super(modrmsib,imm);
 	}
 }

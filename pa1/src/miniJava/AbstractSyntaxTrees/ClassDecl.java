@@ -21,4 +21,6 @@ public class ClassDecl extends Declaration {
       
   public FieldDeclList fieldDeclList;
   public MethodDeclList methodDeclList;
+
+  public int runTimeOffset;
 }

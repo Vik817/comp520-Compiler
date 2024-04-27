@@ -1,12 +1,12 @@
 package miniJava.CodeGeneration.x64.ISA;
 
 import miniJava.CodeGeneration.x64.Instruction;
-import miniJava.CodeGeneration.x64.ModRMSIB;
+import miniJava.CodeGeneration.x64.RS;
 import miniJava.CodeGeneration.x64.x64;
 
 public class Jmp extends Instruction {
 	// jmp (some register combination)
-	public Jmp(ModRMSIB modrmsib) {
+	public Jmp(RS modrmsib) {
 		opcodeBytes.write(0xFF);
 		
 		modrmsib.SetRegR(x64.mod543ToReg(4));
