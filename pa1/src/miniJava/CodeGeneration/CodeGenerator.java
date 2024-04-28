@@ -24,6 +24,7 @@ public class CodeGenerator implements Visitor<Object, Object> {
 	private HashMap<String, List<Instruction>> patches = new HashMap<>();
 	boolean hasRequiredMainMethod = false;
 	int mainMethodAddress = -1;
+	int addOfPrintLn = -1;
 
 	public CodeGenerator(ErrorReporter errors) {
 		this._errors = errors;
@@ -89,6 +90,7 @@ public class CodeGenerator implements Visitor<Object, Object> {
 	@Override
 	public Object visitPackage(Package prog, Object arg) {
 		// TODO: visit relevant parts of our AST
+		addOfPrintLn = makePrintln();
 		for(ClassDecl cD : prog.classDeclList) {
 			cD.visit(this, null);
 		}
@@ -131,17 +133,11 @@ public class CodeGenerator implements Visitor<Object, Object> {
 
 	@Override
 	public Object visitMethodDecl(MethodDecl md, Object arg) {
-		if(md.name.equals("println") && md.classContext.name.equals("_PrintStream")) {
-			makePrintln();
-			return null;
-		}
+		boolean mainMethod = false;
 
 		md.runtimeAddress = _asm.getSize(); //Gives the start address of where this method is
 		//This is the index in the _asm list where the methodDecl is
 		//Can access the asm list's index here, and get the address at that index to get the method address
-
-		_asm.add(new Push(Reg64.RBP)); //push rbp
-		_asm.add(new Mov_rmr(new RS(Reg64.RBP, Reg64.RSP))); //mov rbp, rsp
 
 
 		//If Im at my main method
@@ -153,12 +149,16 @@ public class CodeGenerator implements Visitor<Object, Object> {
 						if(currPD.name.equals("args")) {
 							hasRequiredMainMethod = true;
 							mainMethodAddress = md.runtimeAddress;
+							mainMethod = true;
 						}
 					}
 
 				}
 			}
 		}
+
+		_asm.add(new Push(Reg64.RBP)); //push rbp
+		_asm.add(new Mov_rmr(new RS(Reg64.RBP, Reg64.RSP))); //mov rbp, rsp
 
 		for(ParameterDecl pd: md.parameterDeclList) {
 			pd.visit(this, md);
@@ -179,6 +179,7 @@ public class CodeGenerator implements Visitor<Object, Object> {
 		_asm.add(new Mov_rmr(new RS(Reg64.RSP, Reg64.RBP))); //mov rsp, rbp
 		_asm.add(new Pop(Reg64.RBP)); //pop rbp
 		_asm.add(new Ret()); //ret
+
 
 		if(hasRequiredMainMethod) { //Im at the end of my main Method
 			_asm.add(new Xor( new RS(Reg64.RDI, Reg64.RDI)));
@@ -223,9 +224,11 @@ public class CodeGenerator implements Visitor<Object, Object> {
 
 	@Override
 	public Object visitBlockStmt(BlockStmt stmt, Object arg) {
+		_asm.add(new Mov_rmr(new RS(Reg64.R9, Reg64.RBP)));
 		for(Statement st : stmt.sl) {
 			st.visit(this, null);
 		}
+		_asm.add(new Mov_rmr(new RS(Reg64.RBP, Reg64.R9)));
 		//Need to remove everything that was put on the stack in this method
 		return null;
 	}
@@ -334,6 +337,11 @@ public class CodeGenerator implements Visitor<Object, Object> {
 					_asm.add(new Call(currAdd, mD.runtimeAddress));
 				}
 			} else {
+				if(mD.name.equals("println")) {
+					int currentAddress = _asm.getSize();
+					_asm.add(new Call(currentAddress, addOfPrintLn));
+					return null;
+				}
 				(stmt.methodRef).visit(this, true); //Should push "this" on the stack
 				if(mD.runtimeAddress == -1) {
 					if(!patches.containsKey(mD.name)) {
@@ -395,7 +403,7 @@ public class CodeGenerator implements Visitor<Object, Object> {
 	public Object visitWhileStmt(WhileStmt stmt, Object arg) {
 		stmt.cond.visit(this, null);
 		_asm.add(new Pop(Reg64.RAX)); //has condition
-		_asm.add(new Cmp(new RS(Reg64.RAX, Reg64.RAX), 1)); //Compares condition to true
+		_asm.add(new Cmp(new RS(Reg64.RAX, true), 1)); //Compares condition to true
 
 		int currAdd = _asm.getSize();
 		CondJmp cJ = new CondJmp(Condition.NE, 0); //Jumps if not equal, need to patch later
@@ -626,11 +634,11 @@ public class CodeGenerator implements Visitor<Object, Object> {
 
 	@Override
 	public Object visitQRef(QualRef ref, Object arg) {
-		ref.ref.visit(this, Boolean.TRUE);
+		ref.ref.visit(this, arg);
 		//visit LHS
 		//pop into a register?
 		_asm.add(new Pop(Reg64.RAX));
-		_asm.add(new Add(new RS(Reg64.RAX, false), ((FieldDecl)ref.id.dec).offset));
+		_asm.add(new Add(new RS(Reg64.RAX, true), ((FieldDecl)ref.id.dec).offset));
 		//gets the location of the id
 		_asm.add(new Push(Reg64.RAX));
 		return null;
@@ -694,7 +702,12 @@ public class CodeGenerator implements Visitor<Object, Object> {
 
 	private int makePrintln() {
 		// TODO: how can we generate the assembly to println?
-		return -1;
+		int index = _asm.add(new Mov_rmi(new RS(Reg64.RAX, true), 1));
+		_asm.add(new Mov_rmi(new RS(Reg64.RDI, true), 1));
+		_asm.add(new Mov_rmi(new RS(Reg64.RDX, true), 1));
+		_asm.add(new Syscall());
+		_asm.add(new Ret());
+		return index;
 	}
 
 

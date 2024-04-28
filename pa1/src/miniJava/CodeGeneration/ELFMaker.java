@@ -38,7 +38,7 @@ public class ELFMaker {
 		// next is the .text
 		text.sectionName = ".text";
 		text.sh_size = textSize;
-		text.sh_flags = 0x04; // TODO: what flags does the text section get?
+		text.sh_flags = 0x04 | 0x02; // TODO: what flags does the text section get?
 		//Executable, check if it is also allocate
 		text.sh_type = 0x01; // TODO: what type is the text section?
 		//Program
@@ -52,7 +52,7 @@ public class ELFMaker {
 		bss.sh_size = bssSize;
 		bss.sh_type = 0x08; // TODO: what type is the bss section?
 		//SHT_NOBITS
-		bss.sh_flags = 0x01; // TODO: what are the flags of the bss section?
+		bss.sh_flags = 0x01 | 0x02; // TODO: what are the flags of the bss section?
 		//Write, check if it is also allocate
 		sections.add( bss );
 		
@@ -60,7 +60,7 @@ public class ELFMaker {
 		shstrtab.sectionName = ".shstrtab";
 		shstrtab.sh_type = 0x03; // TODO: what is the type of the shstrtab section?
 		//String table
-		shstrtab.sh_flags = 0; // TODO: what are the flags of this section?
+		shstrtab.sh_flags = 0x0; // TODO: what are the flags of this section?
 		//No flags
 		sections.add( shstrtab );
 		shstrtab.data = makeSectionStrings(sections);
@@ -103,7 +103,7 @@ public class ELFMaker {
 		
 		phdr.p_type = 6; // TODO: what is the type of the program header segment?
 		//PT_PHDR
-		phdr.p_flags = 0; // TODO: what are the flags of the program header segment?
+		phdr.p_flags = 1 | 2 | 4; // TODO: what are the flags of the program header segment?
 		//Check this
 		phdr.p_offset = phStartAddress;
 		phdr.p_vaddr = phStartAddress;
@@ -113,7 +113,7 @@ public class ELFMaker {
 		
 		textSeg.p_type = 1; // TODO: type of the text segment?
 		//PT Load
-		textSeg.p_flags = 1; // TODO: flags for the text segment?
+		textSeg.p_flags = 1| 4; // TODO: flags for the text segment?
 		//Executable X
 		//Also has R, need to implement that
 		textSeg.p_offset = text.sh_offset;
@@ -351,7 +351,7 @@ public class ELFMaker {
 		e.data = null;
 		
 		e.sh_name = 0;
-		e.sh_type = 0; // TODO: what type is the null section?
+		e.sh_type = 0x0; // TODO: what type is the null section?
 		//Not sure
 		e.sh_flags = 0;
 		e.sh_addr = 0;
