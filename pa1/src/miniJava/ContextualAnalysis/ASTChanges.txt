@@ -2,5 +2,11 @@ Identifier: Added Declaration parameter "dec"
 
 Reference: Added Declaration parameter "referenceDeclaration"
 
-MethodDecl: Added ClassDecl parameter "classContext"
+MethodDecl: Added ClassDecl parameter "classContext", added runtimeAddress
+
+ClassDecl: Added runTime offset
+
+FieldDecl: Added offset
+
+LocalDecl: Added offsetStore
 
