@@ -145,6 +145,10 @@ public class CodeGenerator implements Visitor<Object, Object> {
 				if(currPD.type instanceof ArrayType) {
 					if(((ClassType) ((ArrayType)currPD.type).eltType).className.spelling.equals("String")) { //Checks if it is String
 						if(currPD.name.equals("args")) {
+							if(hasRequiredMainMethod) {
+								_errors.reportError("Already have a main method");
+								throw new Error();
+							}
 							hasRequiredMainMethod = true;
 							mainMethodAddress = md.runtimeAddress;
 							mainMethod = true;
@@ -646,8 +650,7 @@ public class CodeGenerator implements Visitor<Object, Object> {
 		//pop into a register?
 		_asm.add(new Pop(Reg64.RAX));
 		if(ref.ref instanceof QualRef) {
-			_asm.add(new Add(new RS(Reg64.RAX, true), ((FieldDecl)ref.id.dec).offset));
-			//_asm.add(new Mov_rrm(new RS(Reg64.RAX, 0, Reg64.RAX)));
+			_asm.add(new Mov_rrm(new RS(Reg64.RAX, 0, Reg64.RAX)));
 		} else {
 			_asm.add(new Add(new RS(Reg64.RAX, true), ((FieldDecl)ref.id.dec).offset));
 		}
