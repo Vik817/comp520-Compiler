@@ -104,8 +104,6 @@ public class CodeGenerator implements Visitor<Object, Object> {
 	@Override
 	public Object visitClassDecl(ClassDecl cd, Object arg) {
 
-		cd.runTimeOffset = classRuntimeEntity;
-		classRuntimeEntity += 8;
 		for(FieldDecl fD : cd.fieldDeclList) {
 			fD.visit(this, cd);
 		}
@@ -134,11 +132,11 @@ public class CodeGenerator implements Visitor<Object, Object> {
 	@Override
 	public Object visitMethodDecl(MethodDecl md, Object arg) {
 		boolean mainMethod = false;
-
 		md.runtimeAddress = _asm.getSize(); //Gives the start address of where this method is
 		//This is the index in the _asm list where the methodDecl is
 		//Can access the asm list's index here, and get the address at that index to get the method address
-
+		_asm.add(new Push(Reg64.RBP)); //push rbp
+		_asm.add(new Mov_rmr(new RS(Reg64.RBP, Reg64.RSP))); //mov rbp, rsp
 
 		//If Im at my main method
 		if(!md.isPrivate && md.isStatic && md.type.typeKind == TypeKind.VOID && md.name.equals("main")) {
@@ -156,9 +154,6 @@ public class CodeGenerator implements Visitor<Object, Object> {
 				}
 			}
 		}
-
-		_asm.add(new Push(Reg64.RBP)); //push rbp
-		_asm.add(new Mov_rmr(new RS(Reg64.RBP, Reg64.RSP))); //mov rbp, rsp
 
 		for(ParameterDecl pd: md.parameterDeclList) {
 			pd.visit(this, md);
@@ -178,13 +173,15 @@ public class CodeGenerator implements Visitor<Object, Object> {
 		pdOffset = 0;
 		_asm.add(new Mov_rmr(new RS(Reg64.RSP, Reg64.RBP))); //mov rsp, rbp
 		_asm.add(new Pop(Reg64.RBP)); //pop rbp
-		_asm.add(new Ret()); //ret
 
 
-		if(hasRequiredMainMethod) { //Im at the end of my main Method
+		if(mainMethod) { //Im at the end of my main Method
+			_asm.add(new Mov_rmi( new RS(Reg64.RAX, true), 60));
 			_asm.add(new Xor( new RS(Reg64.RDI, Reg64.RDI)));
-			_asm.add(new Mov_ri64(Reg64.RAX, 0));
 			_asm.add(new Syscall());
+		} else {
+			_asm.add(new Ret());
+			//return to where I was called to continue generating
 		}
 		return null;
 	}
@@ -193,7 +190,7 @@ public class CodeGenerator implements Visitor<Object, Object> {
 	public Object visitParameterDecl(ParameterDecl pd, Object arg) {
 		//Need to check if "this" exists
 		pd.offsetStore = pdOffset;
-		_asm.add(new Push(0)); //push 0 on the stack to account for a parameter
+		//_asm.add(new Push(0)); //push 0 on the stack to account for a parameter
 		pdOffset += 8;
 		return null;
 	}
@@ -235,8 +232,8 @@ public class CodeGenerator implements Visitor<Object, Object> {
 
 	@Override
 	public Object visitVardeclStmt(VarDeclStmt stmt, Object arg) {
-		stmt.varDecl.visit(this, null);
-		stmt.initExp.visit(this, null);
+		stmt.varDecl.visit(this, arg);
+		stmt.initExp.visit(this, Boolean.TRUE);
 		_asm.add(new Pop(Reg64.RAX)); //pop RAX (pops initExp value from stack and puts in RAX)
 		//My variable is at RBP + stmt.vardecl.offset
 		//I want to take value in RAX and store it at that memory location
@@ -283,7 +280,7 @@ public class CodeGenerator implements Visitor<Object, Object> {
 
 		//Visit each argument in reverse order (so they get pushed on the stack in reverse)
 		for(int i = stmt.argList.size() -1; i >= 0; i--) {
-			stmt.argList.get(i).visit(this, null);
+			stmt.argList.get(i).visit(this, Boolean.TRUE);
 		}
 		if(stmt.methodRef instanceof IdRef) {
 			MethodDecl mD = (MethodDecl)((IdRef)stmt.methodRef).id.dec;
@@ -321,8 +318,15 @@ public class CodeGenerator implements Visitor<Object, Object> {
 				}
 			}
 		} else if(stmt.methodRef instanceof QualRef) {
-			MethodDecl mD = (MethodDecl)((QualRef)stmt.methodRef).id.dec;
+			MethodDecl mD = (MethodDecl)((QualRef)stmt.methodRef).referenceDeclaration;
 			if(mD.isStatic) {
+				if(mD.name.equals("println")) {
+					_asm.add(new Pop(Reg64.R12));
+					int currentAddress = _asm.getSize();
+					_asm.add(new Call(currentAddress, addOfPrintLn));
+					//System.out.println("got here");
+					return null;
+				}
 				if(mD.runtimeAddress == -1) {
 					if(!patches.containsKey(mD.name)) {
 						patches.put(mD.name, new ArrayList<>());
@@ -337,12 +341,14 @@ public class CodeGenerator implements Visitor<Object, Object> {
 					_asm.add(new Call(currAdd, mD.runtimeAddress));
 				}
 			} else {
+				((QualRef)stmt.methodRef).ref.visit(this, true); //Should push "this" on the stack
 				if(mD.name.equals("println")) {
+					_asm.add(new Pop(Reg64.R12));
 					int currentAddress = _asm.getSize();
 					_asm.add(new Call(currentAddress, addOfPrintLn));
+					//System.out.println("got here");
 					return null;
 				}
-				(stmt.methodRef).visit(this, true); //Should push "this" on the stack
 				if(mD.runtimeAddress == -1) {
 					if(!patches.containsKey(mD.name)) {
 						patches.put(mD.name, new ArrayList<>());
@@ -485,14 +491,13 @@ public class CodeGenerator implements Visitor<Object, Object> {
 		_asm.add(new Pop(Reg64.RCX)); //has index
 		_asm.add(new Pop(Reg64.RAX)); //has reference
 
-		_asm.add(new Push(new RS(Reg64.RAX, Reg64.RCX, 8, 0)));
-
+		_asm.add(new Mov_rmr(new RS(Reg64.RAX, Reg64.RCX, 8, 0)));
+		_asm.add(new Push(Reg64.RAX));
 		return null;
 	}
 
 	@Override
 	public Object visitCallExpr(CallExpr expr, Object arg) {
-
 		//Visit each argument in reverse order (so they get pushed on the stack in reverse)
 		for(int i = expr.argList.size() -1; i >= 0; i--) {
 			expr.argList.get(i).visit(this, null);
@@ -610,6 +615,7 @@ public class CodeGenerator implements Visitor<Object, Object> {
 
 	@Override
 	public Object visitIdRef(IdRef ref, Object arg) {
+		System.out.println("HERERERERERE");
 		if(ref.id.dec instanceof LocalDecl) { //offset from RBP
 			LocalDecl lD = (LocalDecl) ref.id.dec;
 			if(arg instanceof Boolean) {
@@ -638,7 +644,12 @@ public class CodeGenerator implements Visitor<Object, Object> {
 		//visit LHS
 		//pop into a register?
 		_asm.add(new Pop(Reg64.RAX));
-		_asm.add(new Add(new RS(Reg64.RAX, true), ((FieldDecl)ref.id.dec).offset));
+		if(ref.ref instanceof QualRef) {
+			_asm.add(new Mov_rrm(new RS(Reg64.RAX, 0, Reg64.RAX)));
+		} else {
+			_asm.add(new Add(new RS(Reg64.RAX, true), ((FieldDecl)ref.id.dec).offset));
+		}
+
 		//gets the location of the id
 		_asm.add(new Push(Reg64.RAX));
 		return null;
@@ -701,12 +712,15 @@ public class CodeGenerator implements Visitor<Object, Object> {
 	}
 
 	private int makePrintln() {
-		// TODO: how can we generate the assembly to println?
+
 		int index = _asm.add(new Mov_rmi(new RS(Reg64.RAX, true), 1));
 		_asm.add(new Mov_rmi(new RS(Reg64.RDI, true), 1));
+		_asm.add(new Mov_rrm(new RS(Reg64.R12, Reg64.RSI)));
 		_asm.add(new Mov_rmi(new RS(Reg64.RDX, true), 1));
 		_asm.add(new Syscall());
+		// TODO: how can we generate the assembly to println?
 		_asm.add(new Ret());
+		//System.out.println("Here!");
 		return index;
 	}
 
