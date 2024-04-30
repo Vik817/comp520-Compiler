@@ -6,7 +6,7 @@ the Linux operating system
 
 The diagram below depicts the process of how this Compiler works:
 
-![Compiler Design](PA5 Diagram-1.jpg)
+![Compiler Design](CompilerDiagram.jpg)
 
 ## Progress so far:
 
