@@ -4,6 +4,10 @@ This is a Compiler (WIP) for the MiniJava language meant to take code written in
 miniJava and compile it into byte code that targets x86/64 processors and
 the Linux operating system
 
+The diagram below depicts the process of how this Compiler works:
+
+![Compiler Design](PA5 Diagram-1.jpg)
+
 ## Progress so far:
 
 ### PA1: Done
